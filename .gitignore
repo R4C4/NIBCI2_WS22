@@ -1,0 +1,9 @@
+00_installers/*
+01_impedance_check_v0.2/*
+02_gUSBamp_lsl_app/*
+03_lsl_LabRecorder/*
+99_library_and_toolboxes/*
+999_recorded_data/*
+
+*.xdf
+*.mat

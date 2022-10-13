@@ -1,0 +1,1 @@
+start 01_impedance_check_v0.2\impedance.exe 01_impedance_check_v0.2\configs\gtecUSBamp.xml
