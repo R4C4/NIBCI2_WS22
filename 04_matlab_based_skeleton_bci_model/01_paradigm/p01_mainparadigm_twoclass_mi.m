@@ -88,7 +88,9 @@ pause(BCIpar.times.time_pre_run)
 for k_trial = 1:BCIpar.nTrials
     
 % display current trial and timings in the command window
-
+ fprintf(['Starting Trial ' k_trial '\n']);
+ fprintf(['Trial type ' ...
+     BCIPar.cues.class_labels{BCIpar.cues.class_list(k_trial)} '\n']);
 % get current trial parameters, reset flags and timer
 
     t_start = tic;
