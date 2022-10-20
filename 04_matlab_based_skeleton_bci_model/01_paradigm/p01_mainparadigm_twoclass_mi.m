@@ -84,7 +84,6 @@ fprintf('\n \n Start of run...')
 
 % wait for the duration specified in preloadscript
 pause(BCIpar.times.time_pre_run)
-
 % ii) for loop running trials
 for k_trial = 1:BCIpar.nTrials
     
@@ -94,15 +93,12 @@ for k_trial = 1:BCIpar.nTrials
 
     t_start = tic;
     trialrunning=true;
-    while trialrunning
-        
+    while trialrunning        
         % Here you need to check the timings, present stimuli on the screen
-        % and send the markers 
-        
-        
+        % and send the markers         
         % How check the timings? By using tic & toc functions you are able
         % to implement correct timing for state (Please see BCIpar.times)
-        % strategy: the paradigm constantly checks the elapsed time since
+        % strategy: the paradigm constantly checks the elapsed time sinces
         % the beginning of the trial, and changes state (pre-cue, cue,
         % mi... etc) accordingly
         % Example:
@@ -117,13 +113,7 @@ for k_trial = 1:BCIpar.nTrials
         % display fixation cross
         %set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'on');
         %set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'on');
-        % drawnow limitrate;
-        
-%         tic
-%         while toc<BCIpar.times.time_pre_run
-%         end
-%         toc
-%         t=toc(t_start);
+        % drawnow limitrate;       
         % sending the markers
         % In order to analyze the data after the measurement, we need to
         % know the onset of each state.
@@ -135,34 +125,45 @@ for k_trial = 1:BCIpar.nTrials
         % 
         % % display confirmation in the command window and change the flag for marker sent
         % fprintf(['\nt = 0 ' marker_text '])
-        
+        %set(BCIpar.sfDisplay.hMainAxes, 'Visible', 'on');
         set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'on');
         set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'on');
-        pause(BCIpar.times.time_pre_cue)
-        if BCIpar.cues.class_list(k_trial)==1
-            set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'on');
-        else
-            set(BCIpar.sfDisplay.himage_class2_start, 'Visible', 'on');
-        end
-        pause(BCIpar.times.time_cue)
-        
-        set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'off');
-        set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'off');
-        
-        % break - turn off visibility of all elements in the figure
-        %set(BCIpar.sfDisplay.himage_class2_execute, 'Visible', 'off');
-        %set(BCIpar.sfDisplay.himage_class1_execute, 'Visible', 'off');
-        
-        pause(BCIpar.times.time_mi)
-        if BCIpar.cues.class_list(k_trial)==1
+        %PreCue
+         pause(BCIpar.times.time_pre_cue)
+         if BCIpar.cues.class_list(k_trial)==1
+             set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'on');
+         else
+             set(BCIpar.sfDisplay.himage_class2_start, 'Visible', 'on');
+         end
+         pause(BCIpar.times.time_cue)
+         
+         set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'off');
+         set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'off');
+         
+         % Motor Imagery Start
+         if BCIpar.cues.class_list(k_trial)==1
             set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'off');
+            set(BCIpar.sfDisplay.himage_class1_execute, 'Visible', 'on');
+            %set(BCIpar.sfDisplay.haxes_class1_execute, 'Visible', 'on');
         else
             set(BCIpar.sfDisplay.himage_class2_start, 'Visible', 'off');
+            set(BCIpar.sfDisplay.himage_class2_execute, 'Visible', 'on');
+            %set(BCIpar.sfDisplay.haxes_class2_execute, 'Visible', 'on');
+        end
+        pause(BCIpar.times.time_mi)
+        
+        if BCIpar.cues.class_list(k_trial)==1
+            set(BCIpar.sfDisplay.himage_class1_execute, 'Visible', 'off');
+        else
+            set(BCIpar.sfDisplay.himage_class2_execute, 'Visible', 'off');
         end
         
+        %Todo Set to random time between min and and max
         pause(BCIpar.times.time_break_min)
+        
         trialrunning=false;
     end
+    break;
 end
 
 % iii) post-run
