@@ -93,7 +93,7 @@ for k_trial = 1:BCIpar.nTrials
 % get current trial parameters, reset flags and timer
 
     t_start = tic;
-    
+    trialrunning=true;
     while trialrunning
         
         % Here you need to check the timings, present stimuli on the screen
@@ -108,20 +108,22 @@ for k_trial = 1:BCIpar.nTrials
         % Example:
         % t_start = tic;
         % t = toc(t_start);
-        
-        
-        
+
         % stimuli presentation 
         % First, you load all of your needed pictures in 
         % set_bciparadigm_parameters_twoclass_mi.m function
         % Then based on the state of experiment you show different pics. 
         % Example:
         % display fixation cross
-        % set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'on');
-        % set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'on');
+        %set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'on');
+        %set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'on');
         % drawnow limitrate;
         
-        
+%         tic
+%         while toc<BCIpar.times.time_pre_run
+%         end
+%         toc
+%         t=toc(t_start);
         % sending the markers
         % In order to analyze the data after the measurement, we need to
         % know the onset of each state.
@@ -133,17 +135,33 @@ for k_trial = 1:BCIpar.nTrials
         % 
         % % display confirmation in the command window and change the flag for marker sent
         % fprintf(['\nt = 0 ' marker_text '])
-
         
+        set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'on');
+        set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'on');
+        pause(BCIpar.times.time_pre_cue)
+        if BCIpar.cues.class_list(k_trial)==1
+            set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'on');
+        else
+            set(BCIpar.sfDisplay.himage_class2_start, 'Visible', 'on');
+        end
+        pause(BCIpar.times.time_cue)
         
-            
-        % break - turn off visibility of all elements in the figure
-        set(BCIpar.sfDisplay.himage_class2_execute, 'Visible', 'off');
-        set(BCIpar.sfDisplay.himage_class1_execute, 'Visible', 'off');
         set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'off');
         set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'off');
-            
-    
+        
+        % break - turn off visibility of all elements in the figure
+        %set(BCIpar.sfDisplay.himage_class2_execute, 'Visible', 'off');
+        %set(BCIpar.sfDisplay.himage_class1_execute, 'Visible', 'off');
+        
+        pause(BCIpar.times.time_mi)
+        if BCIpar.cues.class_list(k_trial)==1
+            set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'off');
+        else
+            set(BCIpar.sfDisplay.himage_class2_start, 'Visible', 'off');
+        end
+        
+        pause(BCIpar.times.time_break_min)
+        trialrunning=false;
     end
 end
 
