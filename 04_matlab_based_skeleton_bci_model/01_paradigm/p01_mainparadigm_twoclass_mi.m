@@ -119,27 +119,27 @@ for k_trial = 1:BCIpar.nTrials
         % know the onset of each state.
         % LSL library is used to send the markers to the stream
         % Example:
-        % marker_text = 'start_of_trial';
-        % outlet_marker.push_sample({marker_text});
-        % outlet_marker.push_sample({'fixation_cross'});
+        %marker_text = 'start_of_trial';
+        %outlet_marker.push_sample({marker_text});
+
         % 
         % % display confirmation in the command window and change the flag for marker sent
-        % fprintf(['\nt = 0 ' marker_text '])
         %set(BCIpar.sfDisplay.hMainAxes, 'Visible', 'on');
+        push_marker('pre_cue_start', outlet_marker);
         set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'on');
         set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'on');
-        %PreCue
-         pause(BCIpar.times.time_pre_cue)
+        pause(BCIpar.times.time_pre_cue);
+        push_marker('cue_start', outlet_marker);
          if BCIpar.cues.class_list(k_trial)==1
              set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'on');
          else
              set(BCIpar.sfDisplay.himage_class2_start, 'Visible', 'on');
          end
+       
          pause(BCIpar.times.time_cue)
-         
          set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'off');
          set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'off');
-         
+         push_marker('mi_start', outlet_marker);
          % Motor Imagery Start
          if BCIpar.cues.class_list(k_trial)==1
             set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'off');
@@ -157,13 +157,12 @@ for k_trial = 1:BCIpar.nTrials
         else
             set(BCIpar.sfDisplay.himage_class2_execute, 'Visible', 'off');
         end
-        
+        push_marker('break_start', outlet_marker);
         %Todo Set to random time between min and and max
         pause(BCIpar.times.time_break_min)
-        
+        push_marker('break_end', outlet_marker);
         trialrunning=false;
     end
-    break;
 end
 
 % iii) post-run
@@ -171,6 +170,12 @@ pause(BCIpar.times.time_post_run)
 close(BCIpar.sfDisplay.hfig); % closing figure
 outlet_marker.push_sample({'end of run'});
 fprintf('\n \n ... end of run! \n')
+
+function push_marker(text,lsl_outlet)
+    marker_text = text;
+    lsl_outlet.push_sample({marker_text});
+    fprintf(['\nt = 0 ' marker_text ])
+end
 
 %% lsl outlets cleanup
 clear outlet_marker
