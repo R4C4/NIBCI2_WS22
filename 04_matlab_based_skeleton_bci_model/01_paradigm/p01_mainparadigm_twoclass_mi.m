@@ -158,8 +158,10 @@ for k_trial = 1:BCIpar.nTrials
             set(BCIpar.sfDisplay.himage_class2_execute, 'Visible', 'off');
         end
         push_marker('break_start', outlet_marker, toc(t_start));
-        %Todo Set to random time between min and and max
-        pause(BCIpar.times.time_break_min)
+        a = BCIpar.times.time_break_min;
+        b = BCIpar.times.time_break_max;
+        break_time = (b-a).*rand() + a;
+        pause(break_time)
         push_marker('break_end', outlet_marker, toc(t_start));
         trialrunning=false;
     end
