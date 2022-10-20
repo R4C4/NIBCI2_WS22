@@ -88,9 +88,9 @@ pause(BCIpar.times.time_pre_run)
 for k_trial = 1:BCIpar.nTrials
     
 % display current trial and timings in the command window
- fprintf(['Starting Trial ' k_trial '\n']);
+ fprintf('\n\n Starting Trial %d \n', k_trial);
  fprintf(['Trial type ' ...
-     BCIPar.cues.class_labels{BCIpar.cues.class_list(k_trial)} '\n']);
+     BCIpar.cues.class_labels{BCIpar.cues.class_list(k_trial)} '\n']);
 % get current trial parameters, reset flags and timer
 
     t_start = tic;
@@ -105,8 +105,6 @@ for k_trial = 1:BCIpar.nTrials
         % mi... etc) accordingly
         % Example:
         % t_start = tic;
-        % t = toc(t_start);
-
         % stimuli presentation 
         % First, you load all of your needed pictures in 
         % set_bciparadigm_parameters_twoclass_mi.m function
@@ -127,11 +125,11 @@ for k_trial = 1:BCIpar.nTrials
         % 
         % % display confirmation in the command window and change the flag for marker sent
         %set(BCIpar.sfDisplay.hMainAxes, 'Visible', 'on');
-        push_marker('pre_cue_start', outlet_marker);
+        push_marker('pre_cue_start', outlet_marker, toc(t_start));
         set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'on');
         set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'on');
         pause(BCIpar.times.time_pre_cue);
-        push_marker('cue_start', outlet_marker);
+        push_marker('cue_start', outlet_marker, toc(t_start));
          if BCIpar.cues.class_list(k_trial)==1
              set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'on');
          else
@@ -141,7 +139,7 @@ for k_trial = 1:BCIpar.nTrials
          pause(BCIpar.times.time_cue)
          set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'off');
          set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'off');
-         push_marker('mi_start', outlet_marker);
+         push_marker('mi_start', outlet_marker, toc(t_start));
          % Motor Imagery Start
          if BCIpar.cues.class_list(k_trial)==1
             set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'off');
@@ -159,10 +157,10 @@ for k_trial = 1:BCIpar.nTrials
         else
             set(BCIpar.sfDisplay.himage_class2_execute, 'Visible', 'off');
         end
-        push_marker('break_start', outlet_marker);
+        push_marker('break_start', outlet_marker, toc(t_start));
         %Todo Set to random time between min and and max
         pause(BCIpar.times.time_break_min)
-        push_marker('break_end', outlet_marker);
+        push_marker('break_end', outlet_marker, toc(t_start));
         trialrunning=false;
     end
 end
@@ -176,8 +174,8 @@ fprintf('\n \n ... end of run! \n')
 %% lsl outlets cleanup
 clear outlet_marker
 
-function push_marker(text,lsl_outlet)
+function push_marker(text,lsl_outlet, time)
     marker_text = text;
     lsl_outlet.push_sample({marker_text});
-    fprintf(['\nt = 0 ' marker_text ])
+    fprintf('\nt = %f {%s}', time, marker_text)
 end
