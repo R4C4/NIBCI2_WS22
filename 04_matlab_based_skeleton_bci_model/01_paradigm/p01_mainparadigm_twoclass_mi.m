@@ -171,11 +171,11 @@ close(BCIpar.sfDisplay.hfig); % closing figure
 outlet_marker.push_sample({'end of run'});
 fprintf('\n \n ... end of run! \n')
 
+%% lsl outlets cleanup
+clear outlet_marker
+
 function push_marker(text,lsl_outlet)
     marker_text = text;
     lsl_outlet.push_sample({marker_text});
     fprintf(['\nt = 0 ' marker_text ])
 end
-
-%% lsl outlets cleanup
-clear outlet_marker
