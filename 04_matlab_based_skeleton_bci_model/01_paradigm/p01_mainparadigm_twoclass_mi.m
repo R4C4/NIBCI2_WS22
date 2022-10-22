@@ -84,31 +84,27 @@ fprintf('\n \n Start of run...')
 
 % wait for the duration specified in preloadscript
 pause(BCIpar.times.time_pre_run)
-
 % ii) for loop running trials
 for k_trial = 1:BCIpar.nTrials
     
 % display current trial and timings in the command window
-
+ fprintf('\n\n Starting Trial %d \n', k_trial);
+ fprintf(['Trial type ' ...
+     BCIpar.cues.class_labels{BCIpar.cues.class_list(k_trial)} '\n']);
 % get current trial parameters, reset flags and timer
 
     t_start = tic;
     trialrunning=true;
-    while trialrunning
-        
+    while trialrunning        
         % Here you need to check the timings, present stimuli on the screen
-        % and send the markers 
-        
-        
+        % and send the markers         
         % How check the timings? By using tic & toc functions you are able
         % to implement correct timing for state (Please see BCIpar.times)
-        % strategy: the paradigm constantly checks the elapsed time since
+        % strategy: the paradigm constantly checks the elapsed time sinces
         % the beginning of the trial, and changes state (pre-cue, cue,
         % mi... etc) accordingly
         % Example:
         % t_start = tic;
-        % t = toc(t_start);
-
         % stimuli presentation 
         % First, you load all of your needed pictures in 
         % set_bciparadigm_parameters_twoclass_mi.m function
@@ -117,50 +113,56 @@ for k_trial = 1:BCIpar.nTrials
         % display fixation cross
         %set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'on');
         %set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'on');
-        % drawnow limitrate;
-        
-%         tic
-%         while toc<BCIpar.times.time_pre_run
-%         end
-%         toc
-%         t=toc(t_start);
+        % drawnow limitrate;       
         % sending the markers
         % In order to analyze the data after the measurement, we need to
         % know the onset of each state.
         % LSL library is used to send the markers to the stream
         % Example:
-        % marker_text = 'start_of_trial';
-        % outlet_marker.push_sample({marker_text});
-        % outlet_marker.push_sample({'fixation_cross'});
+        %marker_text = 'start_of_trial';
+        %outlet_marker.push_sample({marker_text});
+
         % 
         % % display confirmation in the command window and change the flag for marker sent
-        % fprintf(['\nt = 0 ' marker_text '])
-        
+        %set(BCIpar.sfDisplay.hMainAxes, 'Visible', 'on');
+        push_marker('pre_cue_start', outlet_marker, toc(t_start));
         set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'on');
         set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'on');
-        pause(BCIpar.times.time_pre_cue)
-        if BCIpar.cues.class_list(k_trial)==1
-            set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'on');
-        else
-            set(BCIpar.sfDisplay.himage_class2_start, 'Visible', 'on');
-        end
-        pause(BCIpar.times.time_cue)
-        
-        set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'off');
-        set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'off');
-        
-        % break - turn off visibility of all elements in the figure
-        %set(BCIpar.sfDisplay.himage_class2_execute, 'Visible', 'off');
-        %set(BCIpar.sfDisplay.himage_class1_execute, 'Visible', 'off');
-        
-        pause(BCIpar.times.time_mi)
-        if BCIpar.cues.class_list(k_trial)==1
+        pause(BCIpar.times.time_pre_cue);
+        push_marker('cue_start', outlet_marker, toc(t_start));
+         if BCIpar.cues.class_list(k_trial)==1
+             set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'on');
+         else
+             set(BCIpar.sfDisplay.himage_class2_start, 'Visible', 'on');
+         end
+       
+         pause(BCIpar.times.time_cue)
+         set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'off');
+         set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'off');
+         push_marker('mi_start', outlet_marker, toc(t_start));
+         % Motor Imagery Start
+         if BCIpar.cues.class_list(k_trial)==1
             set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'off');
+            set(BCIpar.sfDisplay.himage_class1_execute, 'Visible', 'on');
+            %set(BCIpar.sfDisplay.haxes_class1_execute, 'Visible', 'on');
         else
             set(BCIpar.sfDisplay.himage_class2_start, 'Visible', 'off');
+            set(BCIpar.sfDisplay.himage_class2_execute, 'Visible', 'on');
+            %set(BCIpar.sfDisplay.haxes_class2_execute, 'Visible', 'on');
         end
+        pause(BCIpar.times.time_mi)
         
-        pause(BCIpar.times.time_break_min)
+        if BCIpar.cues.class_list(k_trial)==1
+            set(BCIpar.sfDisplay.himage_class1_execute, 'Visible', 'off');
+        else
+            set(BCIpar.sfDisplay.himage_class2_execute, 'Visible', 'off');
+        end
+        push_marker('break_start', outlet_marker, toc(t_start));
+        a = BCIpar.times.time_break_min;
+        b = BCIpar.times.time_break_max;
+        break_time = (b-a).*rand() + a;
+        pause(break_time)
+        push_marker('break_end', outlet_marker, toc(t_start));
         trialrunning=false;
     end
 end
@@ -173,3 +175,9 @@ fprintf('\n \n ... end of run! \n')
 
 %% lsl outlets cleanup
 clear outlet_marker
+
+function push_marker(text,lsl_outlet, time)
+    marker_text = text;
+    lsl_outlet.push_sample({marker_text});
+    fprintf('\nt = %f {%s}', time, marker_text)
+end
