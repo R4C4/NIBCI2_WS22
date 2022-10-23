@@ -33,13 +33,14 @@ usbAmp.time_series = filtfilt(h_bp.sosMatrix,h_bp.ScaleValues , ...
 
 %Different approach, choose theoretical epoch size
 BCIpar = set_bciparadigm_parameters_twoclass_mi;
+classes = convertCharsToStrings(BCIpar.cues.class_labels);
 %wlength = (BCIpar.times.time_mi + BCIpar.times.time_cue  ...
 %    + BCIpar.times.time_pre_cue)*fs;
 
 %epoched_data = extract_epochs(eeg_data, eeg_times, markers);
-t_lim = [-2 5];
+t_lim = [-3 5];
 [t_epoch, eegdata_epoched, t_markers] =epoch_data_xdf_streams(...
-    usbAmp, markers,"pre_cue_start", t_lim); 
+    usbAmp, markers,"cue_start", t_lim); 
 
 [reject_epoch, reject_chann] = perform_outlier_rejection(eegdata_epoched);
 
@@ -62,14 +63,14 @@ erds_header.TRIG = starts';
 erds_header.Classlabel = valid_labels;
 erds_borders = [2 40];
 
-cond = 1;
+%Turn off sig boost option if you want to see complete map
+cond = [1 2];
 erds_calc = calcErdsMap(eeg_lapl', erds_header, ...
-                t_lim, erds_borders, 'heading',...
-                sprintf("ERDS Maps %s", BCIpar.cues.class_labels{cond}),...
+                t_lim, erds_borders, 'heading',"ERDS Maps", ...
+                'method', 'bp', 'alpha', 0.05, ...
+                'ref', [-2 -1], 'refmethod', 'trial',...
                 'cue', 0, 'class', cond, 'sig', 'boot');
 
 plotErdsMap(erds_calc);
 
-%PSD Estimation
-
-
+plot_psd(eeg_lapl_epoched, classes, valid_labels, fs);
