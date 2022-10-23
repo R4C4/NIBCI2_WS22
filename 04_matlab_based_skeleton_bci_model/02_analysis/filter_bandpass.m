@@ -1,8 +1,8 @@
 function filtered_signal = filter_bandpass(signal,order, Wn, varargin)
 %BANDPASS Filters the signal using a butterworth bandpass
 %   Uses a butterworth Bandpass to filter a signall from both sides
-    b= butter(order,Wn,'bandpass');
     opts = cell2struct(varargin(2:2:end),varargin(1:2:end),2);
+    b= butter(order,Wn,'bandpass');
     if isfield(opts,'Display')&& opts.display
         figure
         freqz(b)
