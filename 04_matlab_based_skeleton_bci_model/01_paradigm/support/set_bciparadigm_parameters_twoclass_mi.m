@@ -17,6 +17,7 @@ BCIpar.times.time_post_run  = 5;
 
 % number of trials
 BCIpar.nTrials = 20; % total number of trials (half will be class 1, half class 2)
+%BCIpar.nTrials = 120;
 
 % class info
 class1_label = 'hand';
