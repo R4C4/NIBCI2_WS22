@@ -8,7 +8,7 @@ The important bits of code we need to use for our matlab can be found in the the
 .gitignore file as no changes should be necessary there. First clone the repository to your desired working directory. Afterwards head to the  
 [teachcenter](https://tc.tugraz.at/main/course/view.php?id=3208) and download the for_students.zip folder, extract all data from the zip folder into the git target
 directory, **DO NOT OVERWRITE ANY FILES**. Make sure your git shows no extra changed files.
-Add the 99_library_and_toolboxes folder to your PATH
+Add the 99_library_and_toolboxes folder to your PATH if necessary
 
 # Install all Necessary drivers
 Go to 00_installers and install all the included packages after downloading the zip from the teachcenter
@@ -17,6 +17,10 @@ Go to 00_installers and install all the included packages after downloading the 
 3. Install the BrainVision LSL Viewer. Also check that the exe is in the PATH on a windows machine as the bat files call it directly
 
 # Starting development environment
+Make sure you are in the folder in matlab from which the script is run!
+Run and Advance moves the workspace internally to a temporary folder, this will cause issues so its not possible
+to do with this implementation
+
 ## Capturing simulated data
 1. You can start the 02a_start_simulated_eeg.bat file, this will open a matlab instance. Execute it once
 2. Open the p01_mainparadigm_twoclass_mi.m file in a separate matlab instance and execute it the block containing

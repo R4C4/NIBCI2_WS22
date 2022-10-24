@@ -3,7 +3,6 @@
 02_gUSBamp_lsl_app/*
 03_lsl_LabRecorder/*
 99_library_and_toolboxes/*
-999_recorded_data/*
 
 *.mat
 *.asv
