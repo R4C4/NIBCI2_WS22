@@ -74,3 +74,5 @@ erds_calc = calcErdsMap(eeg_lapl', erds_header, ...
 plotErdsMap(erds_calc);
 
 plot_psd(eeg_lapl_epoched, classes, valid_labels, fs);
+    
+LDA(eeg_lapl_epoched,valid_labels);
