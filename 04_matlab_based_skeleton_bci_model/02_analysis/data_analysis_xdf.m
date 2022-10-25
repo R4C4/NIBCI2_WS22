@@ -12,8 +12,8 @@ data = load_xdf(trial_data_location + filename, 'Verbose', true);
 %Check if this information fits with real streams
 %fields: info, segments, time_series, time_stamps
 usbAmp = data{1};
-channels = ["FC4", "FC1", "FCz", "FC2", "FC3", "C5", "C3", "C1", ...
-    "Cz", "C2", "C4", "C6", "CP3", "CPz", "CP4", "Pz"];
+channels = {'FC4', 'FC1', 'FCz', 'FC2', 'FC3', 'C5', 'C3', 'C1', ...
+    'Cz', 'C2', 'C4', 'C6', 'CP3', 'CPz', 'CP4', 'Pz'};
 c_labels = containers.Map(channels, 1:length(channels));
 
 markers = data{2};
@@ -74,3 +74,5 @@ erds_calc = calcErdsMap(eeg_lapl', erds_header, ...
 plotErdsMap(erds_calc);
 
 plot_psd(eeg_lapl_epoched, classes, valid_labels, fs);
+    
+LDA(eeg_lapl_epoched,valid_labels);
