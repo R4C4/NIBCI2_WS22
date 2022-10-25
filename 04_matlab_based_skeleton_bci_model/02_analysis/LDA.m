@@ -1,6 +1,5 @@
 function LDA_classified = LDA(eeg,labels)
     
-    eeg=eeg(1,:,:);
     size_eeg=size(eeg);
     eeg=reshape(eeg,size_eeg(2),size_eeg(3))';
     accuracy = 0;
