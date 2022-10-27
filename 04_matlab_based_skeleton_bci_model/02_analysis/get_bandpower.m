@@ -1,4 +1,4 @@
-function [signal_bandpower] = bandpower_per_channel(data,frequeny_range, fs)
+function [signal_bandpower] = get_bandpower(data,frequeny_range, fs)
 % The function returns the bandpower (in dB) for each channel and each
 % epoch an an array with the size channel x epoches
 %
