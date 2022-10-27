@@ -6,7 +6,7 @@ cd(homedir)
 addpath(genpath('../../'))
 
 trial_data_location="999_recorded_data/";
-filename = "trial_data.xdf";
+filename = "trial_data_120.xdf";
 data = load_xdf(trial_data_location + filename, 'Verbose', true);
 
 %Check if this information fits with real streams
