@@ -72,7 +72,7 @@ cond = [1 2];
 %                 'cue', 0, 'class', cond, 'sig', 'boot');
 % 
 % plotErdsMap(erds_calc);
-plot_psd(eeg_lapl_epoched, classes, valid_labels, fs);
+% plot_psd(eeg_lapl_epoched, classes, valid_labels, fs);
 
 
 %Get band power
@@ -102,7 +102,18 @@ for k_band=1:size(band,1)
             csp_filters'*eeg_lapl_filt_bp(:,:,k_epochs);
 
     end
+    % Features x Channels x Trials
     bpower_csp_eeg(k_band,:,:) = get_bandpower(eeg_lapl_csp);
 end
 
-%LDA(eeg_lapl_epoched,valid_labels);
+%Accuracies with 4 Features
+for channel=1:size(bpower_csp_eeg,2)
+    channel_accuracy = LDA(bpower_csp_eeg,valid_labels, channel)
+end
+
+%Accuracies with only 2 features
+for channel=1:size(bpower_csp_eeg,2)
+    channel_accuracy = LDA(bpower_csp_eeg([1,3], :,:),valid_labels, ...
+        channel)
+end
+
