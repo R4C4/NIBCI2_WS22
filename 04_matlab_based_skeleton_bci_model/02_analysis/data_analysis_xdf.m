@@ -102,7 +102,7 @@ for k_epochs=1:size(eeg_lapl_epoched,3)
         csp_filters'*eeg_lapl_filt_bp_beta(:,:,k_epochs);
 end
 
-bpower_csp_eeg_alpha = get_bandpower(eeg_lapl_csp_alpha, alpha_band, fs);
-bpower_csp_eeg_beta = get_bandpower(eeg_lapl_csp_beta, beta_band, fs);
+bpower_csp_eeg_alpha = get_bandpower(eeg_lapl_csp_alpha);
+bpower_csp_eeg_beta = get_bandpower(eeg_lapl_csp_beta);
 
 %LDA(eeg_lapl_epoched,valid_labels);
