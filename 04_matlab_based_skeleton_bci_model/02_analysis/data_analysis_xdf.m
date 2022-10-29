@@ -6,7 +6,7 @@ cd(homedir)
 addpath(genpath('../../'))
 
 trial_data_location="999_recorded_data/";
-filename = "trial_data.xdf";
+filename = "trial_data_120.xdf";
 data = load_xdf(trial_data_location + filename, 'Verbose', true);
 
 %Check if this information fits with real streams
@@ -72,14 +72,14 @@ erds_borders = [2 40];
 
 %Turn off sig boost option if you want to see complete map
 cond = [1 2];
-% erds_calc = calcErdsMap(eeg_lapl', erds_header, ...
-%                 t_lim, erds_borders, 'heading',"ERDS Maps", ...
-%                 'method', 'bp', 'alpha', 0.05, ...
-%                 'ref', [-2 -1], 'refmethod', 'trial',...
-%                 'cue', 0, 'class', cond, 'sig', 'boot');
-% 
-% plotErdsMap(erds_calc);
-% plot_psd(calibration_set, classes, calibration_labels, fs);
+erds_calc = calcErdsMap(eeg_lapl', erds_header, ...
+                t_lim, erds_borders, 'heading',"ERDS Maps", ...
+                'method', 'bp', 'alpha', 0.05, ...
+                'ref', [-2 -1], 'refmethod', 'trial',...
+                'cue', 0, 'class', cond, 'sig', 'boot');
+
+plotErdsMap(erds_calc);
+plot_psd(calibration_set, classes, calibration_labels, fs);
 
 
 %Get band power
@@ -88,46 +88,44 @@ cond = [1 2];
 % mu_rythm = 8-12 Hz
 
 band = [[4, 8];[6, 10];[24, 28];[26, 30]];%Hz
-
-csp_filters = filter_csp(calibration_set, calibration_labels);
-eeg_lapl_epoched_dims=size(calibration_set);
-bpower_csp_eeg=zeros(size(band,1),eeg_lapl_epoched_dims(1),...
-    eeg_lapl_epoched_dims(3));
-
-for k_band=1:size(band,1)
-
-    b= butter(filter_order, band(k_band,:)/(2*fs),'bandpass');
-    eeg_lapl_filt_bp = zeros(size(calibration_set));
-    eeg_lapl_csp=zeros(size(calibration_set));
-    
-    for k_epochs=1:size(calibration_set,3)    
-        eeg_lapl_filt_bp(:,:,k_epochs) = ...
-            filtfilt(b, 1,calibration_set(:,:,k_epochs)')';
-        eeg_lapl_csp(:,:,k_epochs) = ...
-            csp_filters'*eeg_lapl_filt_bp(:,:,k_epochs);
-
-    end
-    % Features x Channels x Trials
-    bpower_csp_eeg(k_band,:,:) = get_bandpower(eeg_lapl_csp);
-end
+bpower_csp_eeg_calibration = feature_extraction(calibration_set,...
+    calibration_labels, band, filter_order, fs);
 
 %Accuracies with 4 Features
-for channel=1:size(bpower_csp_eeg,2)
-    channel_accuracy_4 = ... 
-        LDA(bpower_csp_eeg,calibration_labels, channel);
+for channel=1:size(bpower_csp_eeg_calibration,2)
+    channel_accuracy_4(channel) = ... 
+        LDA(bpower_csp_eeg_calibration,calibration_labels, channel);
     
-    channel_accuracy_2 = LDA(bpower_csp_eeg([2,3], :,:), ...
+    channel_accuracy_2(channel) = LDA(bpower_csp_eeg_calibration([2,3], :,:), ...
         calibration_labels, channel);
-    
-    % max accuracy and max accuracy index
-    % get those filters
-    
+
 end
-    % Train lda model using complete calibration set
+mean_accuracy_4=mean(channel_accuracy_4);
+mean_accuracy_2=mean(channel_accuracy_2);
 
+%are 4 or 2 features better for the accuracy
+if mean_accuracy_2 > mean_accuracy_4
+    best_band=[[6, 10];[24, 28]];
+    bpower_csp_eeg_calibration=bpower_csp_eeg_calibration([2,3], :,:);
+else
+    best_band=band;
+end
 
-    % Use filters that had most accuracy on test set and evaluate accuracy
-    % using a raw lda function
-    
+bpower_csp_eeg_test = feature_extraction(test_set,...
+    test_labels, best_band, filter_order, fs);
+
+%get accuracy of test set with best features
+for channel=1:size(bpower_csp_eeg_test,2)
+    X_train=squeeze(bpower_csp_eeg_calibration(:,channel,:));
+    X_train = X_train';
+    Y_train=calibration_labels;
+    X_test=squeeze(bpower_csp_eeg_test(:,channel,:));
+    X_test = X_test';
+    Y_test=test_labels;
+    model_lda = lda_train(X_train,Y_train);
+    [predicted_classes, ~, ~] = lda_predict(model_lda,X_test);
+    accuracy=sum(predicted_classes==Y_test)/length(Y_test);
+end
+
     
     

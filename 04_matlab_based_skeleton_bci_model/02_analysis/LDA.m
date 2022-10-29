@@ -1,4 +1,4 @@
-function LDA_classified = LDA(eeg,labels, channel)
+function accu = LDA(eeg,labels, channel)
     
     size_eeg=size(eeg);
     eeg_channel=squeeze(eeg(:,channel,:));
@@ -23,5 +23,5 @@ function LDA_classified = LDA(eeg,labels, channel)
         end
     end
     
-    LDA_classified.accu = accuracy/50;
+    accu = accuracy/50;
 end
