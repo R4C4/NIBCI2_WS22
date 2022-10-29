@@ -65,14 +65,44 @@ erds_borders = [2 40];
 
 %Turn off sig boost option if you want to see complete map
 cond = [1 2];
-erds_calc = calcErdsMap(eeg_lapl', erds_header, ...
-                t_lim, erds_borders, 'heading',"ERDS Maps", ...
-                'method', 'bp', 'alpha', 0.05, ...
-                'ref', [-2 -1], 'refmethod', 'trial',...
-                'cue', 0, 'class', cond, 'sig', 'boot');
+% erds_calc = calcErdsMap(eeg_lapl', erds_header, ...
+%                 t_lim, erds_borders, 'heading',"ERDS Maps", ...
+%                 'method', 'bp', 'alpha', 0.05, ...
+%                 'ref', [-2 -1], 'refmethod', 'trial',...
+%                 'cue', 0, 'class', cond, 'sig', 'boot');
+% 
+% plotErdsMap(erds_calc);
+% plot_psd(eeg_lapl_epoched, classes, valid_labels, fs);
 
-plotErdsMap(erds_calc);
 
-plot_psd(eeg_lapl_epoched, classes, valid_labels, fs);
+%Get band power
+alpha_band = [8, 12];%Hz
+beta_band = [13, 30];%Hz
+
+csp_filters = filter_csp(eeg_lapl_epoched, valid_labels);
+
+eeg_lapl_csp_alpha = zeros(size(eeg_lapl_epoched));
+eeg_lapl_csp_beta = zeros(size(eeg_lapl_epoched));
+
+b_alpha= butter(filter_order,alpha_band/(2*fs),'bandpass');
+b_beta = butter(filter_order,beta_band/(2*fs), 'bandpass');
+
+eeg_lapl_filt_bp_alpha = zeros(size(eeg_lapl_epoched));
+eeg_lapl_filt_bp_beta = zeros(size(eeg_lapl_epoched));
+for k_epochs=1:size(eeg_lapl_epoched,3)
     
-lda = LDA(eeg_lapl_epoched(1,:,:),valid_labels);
+    eeg_lapl_filt_bp_alpha(:,:,k_epochs) = ...
+        filtfilt(b_alpha, 1,eeg_lapl_epoched(:,:,k_epochs)')';
+    eeg_lapl_filt_bp_beta(:,:,k_epochs) = ...
+        filtfilt(b_beta, 1,eeg_lapl_epoched(:,:,k_epochs)')';
+    
+    eeg_lapl_csp_alpha(:,:,k_epochs) = ...
+        csp_filters'*eeg_lapl_filt_bp_alpha(:,:,k_epochs);
+    eeg_lapl_csp_beta(:,:,k_epochs) = ...
+        csp_filters'*eeg_lapl_filt_bp_beta(:,:,k_epochs);
+end
+
+bpower_csp_eeg_alpha = get_bandpower(eeg_lapl_csp_alpha, alpha_band, fs);
+bpower_csp_eeg_beta = get_bandpower(eeg_lapl_csp_beta, beta_band, fs);
+
+%LDA(eeg_lapl_epoched,valid_labels);

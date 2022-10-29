@@ -88,12 +88,13 @@ pause(BCIpar.times.time_pre_run)
 for k_trial = 1:BCIpar.nTrials
     
 % display current trial and timings in the command window
-
+    fprintf("\n\n Start of trial %d% ",k_trial);
 % get current trial parameters, reset flags and timer
 
     t_start = tic;
     trialrunning=true;
-    while trialrunning        
+    while trialrunning  
+        
         % Here you need to check the timings, present stimuli on the screen
         % and send the markers         
         % How check the timings? By using tic & toc functions you are able
@@ -121,15 +122,15 @@ for k_trial = 1:BCIpar.nTrials
         % Example:
         %marker_text = 'start_of_trial';
         %outlet_marker.push_sample({marker_text});
-
+        
         % 
         % % display confirmation in the command window and change the flag for marker sent
         %set(BCIpar.sfDisplay.hMainAxes, 'Visible', 'on');
-        push_marker('pre_cue_start', outlet_marker);
+        push_marker('pre_cue_start', t_start, outlet_marker);
         set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'on');
         set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'on');
         pause(BCIpar.times.time_pre_cue);
-        push_marker('cue_start', outlet_marker);
+        push_marker('cue_start', t_start, outlet_marker);
          if BCIpar.cues.class_list(k_trial)==1
              set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'on');
          else
@@ -139,7 +140,7 @@ for k_trial = 1:BCIpar.nTrials
          pause(BCIpar.times.time_cue)
          set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'off');
          set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'off');
-         push_marker('mi_start', outlet_marker);
+         push_marker('mi_start', t_start, outlet_marker);
          % Motor Imagery Start
          if BCIpar.cues.class_list(k_trial)==1
             set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'off');
@@ -157,10 +158,10 @@ for k_trial = 1:BCIpar.nTrials
         else
             set(BCIpar.sfDisplay.himage_class2_execute, 'Visible', 'off');
         end
-        push_marker('break_start', outlet_marker);
+        push_marker('break_start', t_start, outlet_marker);
         %Todo Set to random time between min and and max
         pause(BCIpar.times.time_break_min)
-        push_marker('break_end', outlet_marker);
+        push_marker('break_end', t_start,  outlet_marker);
         trialrunning=false;
     end
 end
@@ -170,12 +171,12 @@ pause(BCIpar.times.time_post_run)
 close(BCIpar.sfDisplay.hfig); % closing figure
 outlet_marker.push_sample({'end of run'});
 fprintf('\n \n ... end of run! \n')
-
-function push_marker(text,lsl_outlet)
-    marker_text = text;
-    lsl_outlet.push_sample({marker_text});
-    fprintf(['\nt = 0 ' marker_text ])
-end
-
 %% lsl outlets cleanup
 clear outlet_marker
+
+function push_marker(text,t_start, lsl_outlet)
+    marker_text = text;
+    lsl_outlet.push_sample({marker_text});
+    fprintf(sprintf("\n t=%5.9f s marker=%s \n", ...
+        toc(t_start), marker_text));
+end
