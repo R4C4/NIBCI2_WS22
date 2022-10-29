@@ -72,7 +72,7 @@ cond = [1 2];
 %                 'cue', 0, 'class', cond, 'sig', 'boot');
 % 
 % plotErdsMap(erds_calc);
-% plot_psd(eeg_lapl_epoched, classes, valid_labels, fs);
+plot_psd(eeg_lapl_epoched, classes, valid_labels, fs);
 
 
 %Get band power
@@ -85,7 +85,7 @@ band = [[4, 8];[6, 10];[24, 28];[26, 30]];%Hz
 
 csp_filters = filter_csp(eeg_lapl_epoched, valid_labels);
 eeg_lapl_epoched_dims=size(eeg_lapl_epoched);
-bpower_csp_eeg=zeros(size(band,2),eeg_lapl_epoched_dims(1),...
+bpower_csp_eeg=zeros(size(band,1),eeg_lapl_epoched_dims(1),...
     eeg_lapl_epoched_dims(3));
 
 for k_band=1:size(band,2)
