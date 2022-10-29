@@ -72,14 +72,14 @@ erds_borders = [2 40];
 
 %Turn off sig boost option if you want to see complete map
 cond = [1 2];
-erds_calc = calcErdsMap(eeg_lapl', erds_header, ...
-                t_lim, erds_borders, 'heading',"ERDS Maps", ...
-                'method', 'bp', 'alpha', 0.05, ...
-                'ref', [-2 -1], 'refmethod', 'trial',...
-                'cue', 0, 'class', cond, 'sig', 'boot');
-
-plotErdsMap(erds_calc);
-plot_psd(calibration_set, classes, calibration_labels, fs);
+% erds_calc = calcErdsMap(eeg_lapl', erds_header, ...
+%                 t_lim, erds_borders, 'heading',"ERDS Maps", ...
+%                 'method', 'bp', 'alpha', 0.05, ...
+%                 'ref', [-2 -1], 'refmethod', 'trial',...
+%                 'cue', 0, 'class', cond, 'sig', 'boot');
+% 
+% plotErdsMap(erds_calc);
+% plot_psd(calibration_set, classes, calibration_labels, fs);
 
 
 %Get band power
@@ -113,12 +113,21 @@ end
 
 %Accuracies with 4 Features
 for channel=1:size(bpower_csp_eeg,2)
-    channel_accuracy = LDA(bpower_csp_eeg,calibration_labels, channel);
+    channel_accuracy_4 = ... 
+        LDA(bpower_csp_eeg,calibration_labels, channel);
+    
+    channel_accuracy_2 = LDA(bpower_csp_eeg([2,3], :,:), ...
+        calibration_labels, channel);
+    
+    % max accuracy and max accuracy index
+    % get those filters
+    
 end
+    % Train lda model using complete calibration set
 
-%Accuracies with only 2 features
-for channel=1:size(bpower_csp_eeg,2)
-    channel_accuracy = LDA(bpower_csp_eeg([2,3], :,:),calibration_labels, ...
-        channel);
-end
 
+    % Use filters that had most accuracy on test set and evaluate accuracy
+    % using a raw lda function
+    
+    
+    
