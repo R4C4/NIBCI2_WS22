@@ -81,15 +81,16 @@ cond = [1 2];
 % beta_band1 = [24, 28];%Hz
 % beta_band2 = [26, 30];%Hz
 
-band = [[4, 8],[6, 10],[24, 28],[26, 30]];%Hz
+band = [[4, 8];[6, 10];[24, 28];[26, 30]];%Hz
 
 csp_filters = filter_csp(eeg_lapl_epoched, valid_labels);
-siz=size(eeg_lapl_epoched);
-bpower_csp_eeg=zeros(4,3,siz(3));
+eeg_lapl_epoched_dims=size(eeg_lapl_epoched);
+bpower_csp_eeg=zeros(size(band,2),eeg_lapl_epoched_dims(1),...
+    eeg_lapl_epoched_dims(3));
 
-for i=1:2:7
+for k_band=1:size(band,2)
 
-    b= butter(filter_order,[band(i),band(i+1)]/(2*fs),'bandpass');
+    b= butter(filter_order, band(k_band,:)/(2*fs),'bandpass');
     eeg_lapl_filt_bp = zeros(size(eeg_lapl_epoched));
     eeg_lapl_csp=zeros(size(eeg_lapl_epoched));
     
@@ -101,7 +102,8 @@ for i=1:2:7
             csp_filters'*eeg_lapl_filt_bp(:,:,k_epochs);
 
     end
-    bpower_csp_eeg(i-((i-1)/2),:,:) = get_bandpower(eeg_lapl_csp, [band(i),band(i+1)], fs);
+    bpower_csp_eeg(k_band,:,:) = get_bandpower(eeg_lapl_csp, ...
+        band(k_band,:), fs);
 end
 
 % eeg_lapl_csp_alpha = zeros(size(eeg_lapl_epoched));
