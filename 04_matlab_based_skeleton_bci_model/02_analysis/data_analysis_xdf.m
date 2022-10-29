@@ -88,7 +88,7 @@ eeg_lapl_epoched_dims=size(eeg_lapl_epoched);
 bpower_csp_eeg=zeros(size(band,1),eeg_lapl_epoched_dims(1),...
     eeg_lapl_epoched_dims(3));
 
-for k_band=1:size(band,2)
+for k_band=1:size(band,1)
 
     b= butter(filter_order, band(k_band,:)/(2*fs),'bandpass');
     eeg_lapl_filt_bp = zeros(size(eeg_lapl_epoched));
