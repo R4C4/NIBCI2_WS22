@@ -22,39 +22,33 @@ markers = data{2};
 eeg_times = usbAmp.time_stamps;
 fs = str2double(usbAmp.info.nominal_srate);
 
-%Bandpass window filter settings
+%%Bandpass window filter settings
 filter_order = 4;
-%Wn = [0.3/(2*fs) 35/(2*fs)];
-%eeg_data = filter_bandpass(eeg_data,filter_order, Wn);
-
 h_bp = create_online_fbfilt('butter',filter_order,[0.3 35],fs);
 usbAmp.time_series = filtfilt(h_bp.sosMatrix,h_bp.ScaleValues , ...
     double(usbAmp.time_series)')';
 
-%Different approach, choose theoretical epoch size
+%Just get class labels here for plots
 BCIpar = set_bciparadigm_parameters_twoclass_mi;
 classes = convertCharsToStrings(BCIpar.cues.class_labels);
-%wlength = (BCIpar.times.time_mi + BCIpar.times.time_cue  ...
-%    + BCIpar.times.time_pre_cue)*fs;
 
-%epoched_data = extract_epochs(eeg_data, eeg_times, markers);
+%% Epoch data, Perform outlier rejection
+% Epoched data is channel x time x trial
 t_lim = [-3 5];
 [t_epoch, eegdata_epoched, t_markers] =epoch_data_xdf_streams(...
     usbAmp, markers,"cue_start", t_lim); 
-
 [reject_epoch, reject_chann] = perform_outlier_rejection(eegdata_epoched);
-
 if ~isempty(reject_epoch)
     valid_epochs = ~ismember(1:size(eegdata_epoched,3),reject_epoch);
     eegdata_epoched = eegdata_epoched(:,:,valid_epochs);
     t_markers = t_markers(valid_epochs);
     valid_labels = BCIpar.cues.class_list(valid_epochs);
 end
-
+%% Spatial Filtering
 %[C3; Cz; C4] from data
 eeg_lapl = filter_laplacian(usbAmp.time_series, c_labels);
 eeg_lapl_epoched = filter_laplacian(eegdata_epoched, c_labels);
-
+%%Split in Calibration and test data
 n_max = size(eeg_lapl_epoched,3);
 n_cal = floor(2/3*n_max);
 calibration_set = eeg_lapl_epoched(:,:,1:n_cal);
@@ -62,14 +56,12 @@ calibration_labels = valid_labels(1:n_cal);
 test_set = eeg_lapl_epoched(:,:,n_cal+1:n_max);
 test_labels = valid_labels(n_cal+1:n_max);
 
-
-%ERDS-MAPS
+%% ERDS-MAPS
 [~, starts] = ismembertol(t_markers(1:n_cal), usbAmp.time_stamps, 1e-6);
 erds_header.SampleRate = fs;
 erds_header.TRIG = starts';
 erds_header.Classlabel = calibration_labels;
-erds_borders = [2 40];
-
+erds_borders = [2 35];
 %Turn off sig boost option if you want to see complete map
 cond = [1 2];
 erds_calc = calcErdsMap(eeg_lapl', erds_header, ...
@@ -77,55 +69,61 @@ erds_calc = calcErdsMap(eeg_lapl', erds_header, ...
                 'method', 'bp', 'alpha', 0.05, ...
                 'ref', [-2 -1], 'refmethod', 'trial',...
                 'cue', 0, 'class', cond, 'sig', 'boot');
-
 plotErdsMap(erds_calc);
+
+%% PSD
 plot_psd(calibration_set, classes, calibration_labels, fs);
-
-
-%Get band power
+% Known bands
 % alpha_band = 4-12 Hz
 % beta_band = 13-30 Hz
 % mu_rythm = 8-12 Hz
+bands = [[4, 8];[6, 10];[24, 28];[26, 30]];%Hz
 
-band = [[4, 8];[6, 10];[24, 28];[26, 30]];%Hz
-bpower_csp_eeg_calibration = feature_extraction(calibration_set,...
-    calibration_labels, band, filter_order, fs);
+%% Feature Extraction (Bandpass then CSP, then Bandpower Calculation
+% Of features x channels x trials
+bandpower_features = feature_extraction(calibration_set,...
+    calibration_labels, bands, filter_order, fs);
 
-%Accuracies with 4 Features
-for channel=1:size(bpower_csp_eeg_calibration,2)
-    channel_accuracy_4(channel) = ... 
-        LDA(bpower_csp_eeg_calibration,calibration_labels, channel);
-    
-    channel_accuracy_2(channel) = LDA(bpower_csp_eeg_calibration([2,3], :,:), ...
+FEATURE_DIM = 1;
+CHANNEL_DIM = 2;
+TRIAL_DIM = 3;
+
+%% Model Selection 
+%Compare Between 2 Features vs 4 Features
+model_accuracies = size(2, size(bandpower_features, CHANNEL_DIM));
+best_bands=[[6, 10];[24, 28]]; % Band that proved most significand in ERDS
+models = {1:4, [2,3]}; %Index of bands to be used for feature extraction
+selected_features = {bandpower_features(models{1}, :, :), ...
+                     bandpower_features(models{2}, :, :)};
+for channel=1:size(bandpower_features,CHANNEL_DIM)
+    model_accuracies(1, channel) = LDA(selected_features{1}, ...
+        calibration_labels, channel);    
+    model_accuracies(2, channel) = LDA(selected_features{2}, ...
         calibration_labels, channel);
-
 end
-mean_accuracy_4=mean(channel_accuracy_4);
-mean_accuracy_2=mean(channel_accuracy_2);
+%Max value of average over channels
+[~, best_model_idx] = max(mean(model_accuracies,2));
+selected_bands_idx = models{best_model_idx};
 
-%are 4 or 2 features better for the accuracy
-if mean_accuracy_2 > mean_accuracy_4
-    best_band=[[6, 10];[24, 28]];
-    bpower_csp_eeg_calibration=bpower_csp_eeg_calibration([2,3], :,:);
-else
-    best_band=band;
-end
 
-bpower_csp_eeg_test = feature_extraction(test_set,...
-    test_labels, best_band, filter_order, fs);
+% Manually select bands (manual tuning) here
+selected_bands = bands(selected_bands_idx,:);
+best_features = selected_features{selected_bands_idx};
+bandpower_features_test = feature_extraction(test_set,...
+    test_labels, selected_bands, filter_order, fs);
 
 %get accuracy of test set with best features
-for channel=1:size(bpower_csp_eeg_test,2)
-    X_train=squeeze(bpower_csp_eeg_calibration(:,channel,:));
-    X_train = X_train';
-    Y_train=calibration_labels;
-    X_test=squeeze(bpower_csp_eeg_test(:,channel,:));
-    X_test = X_test';
-    Y_test=test_labels;
-    model_lda = lda_train(X_train,Y_train);
-    [predicted_classes, ~, ~] = lda_predict(model_lda,X_test);
-    accuracy=sum(predicted_classes==Y_test)/length(Y_test);
+total_accuracy = size(1,size(bandpower_features_test,CHANNEL_DIM)); 
+for channel=1:size(bandpower_features_test,CHANNEL_DIM)
+    X_train=squeeze(best_features(:,channel,:))';
+    X_test=squeeze(bandpower_features_test(:,channel,:))';
+    %Train Model on all Calibration data
+    model_lda = lda_train(X_train,calibration_labels);
+    %Evaluate Accuracy on test data
+    [predicted_classes, ~, ~] = lda_predict(model_lda, X_test);
+    total_accuracy(channel)= sum(predicted_classes==test_labels)...
+        /length(test_labels);
 end
-
+total_accuracy
     
     

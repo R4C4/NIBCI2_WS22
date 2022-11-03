@@ -5,10 +5,8 @@ function accu = LDA(eeg,labels, channel)
     eeg_channel = eeg_channel';
     accuracy = 0;
     
-    for j=1:10
-        
-        c=cvpartition(size_eeg(3),'KFold',5);
-        
+    for j=1:10        
+        c=cvpartition(size_eeg(3),'KFold',5);        
         for i=1:5
             X_train=eeg_channel(c.training(i),:);
             Y_train=labels(c.training(i),:);
@@ -19,7 +17,8 @@ function accu = LDA(eeg,labels, channel)
             [predicted_classes, ~, ~] = lda_predict(model_lda,X_tst);
             %LDA_classified.class_prob = class_probabilities;
 
-            accuracy = accuracy + sum(predicted_classes==Y_tst)/length(Y_tst);
+            accuracy = accuracy + ...
+                sum(predicted_classes==Y_tst)/length(Y_tst);
         end
     end
     
