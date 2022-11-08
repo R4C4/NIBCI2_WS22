@@ -62,15 +62,14 @@ end
 %% ERDS-MAPS
 % Laplace Derivations to 3 x epoch_time x epoch
 eeg_lapl_calibration = filter_laplacian(calib_data, c_labels);
-%plot_erds_per_cond(eeg_lapl_calibration, fs, t_lim, calib_labels, 1);
-%plot_erds_per_cond(eeg_lapl_calibration, fs, t_lim, calib_labels, 2);
+plot_erds_per_cond(eeg_lapl_calibration, fs, t_lim, calib_labels, 1);
+plot_erds_per_cond(eeg_lapl_calibration, fs, t_lim, calib_labels, 2);
 
 %% PSD
 % plot_psd(eeg_lapl_calibration, classes, calib_labels, fs);
 % Known bands
 % alpha_band = 4-12 Hz
 % beta_band = 13-30 Hz
-% mu_rythm = 8-12 Hz
 bands_alpha = [[4, 8];[6, 10]; [8,12]];%Hz
 bands_beta =  [[18 22];[24, 28];[26, 30]];%Hz
 
@@ -112,22 +111,24 @@ for k_csp = 1:size(csp_filters)
                                 calib_labels, 5, 10);
 end
 [~, best_model_csp_idx] = max(model_accuracies);
+best_num_csp = csp_filters(best_model_csp_idx);
 fprintf("Found Best Performing csp filtering with \n");
-fprintf("%d filters \n",2*csp_filters(best_model_csp_idx));
-fprintf("With accuracy %.2f \n", model_accuracies(best_model_csp_idx));
+fprintf("%d filters \n",2*best_num_csp);
+fprintf("With accuracy %.2f \n\n", model_accuracies(best_model_csp_idx));
 
-% %get accuracy of test set with best features
-% total_accuracy = size(1,size(bandpower_features_test,CHANNEL_DIM)); 
-% for channel=1:size(bandpower_features_test,CHANNEL_DIM)
-%     X_train=squeeze(best_features(:,channel,:))';
-%     X_test=squeeze(bandpower_features_test(:,channel,:))';
-%     %Train Model on all Calibration data
-%     model_lda = lda_train(X_train,calibration_labels);
-%     %Evaluate Accuracy on test data
-%     [predicted_classes, ~, ~] = lda_predict(model_lda, X_test);
-%     total_accuracy(channel)= sum(predicted_classes==test_labels)...
-%         /length(test_labels);
-% end
-% total_accuracy
+%Evaluate Model performance with Test data
+X_train = feature_extraction(calib_data, calib_labels, ...
+        best_bands, filter_order, best_num_csp, fs)';
+X_test = feature_extraction(test_data, test_labels, ...
+        best_bands, filter_order, best_num_csp, fs)';
+    
+%Train Model on all Calibration data
+model_lda = lda_train(X_train,calib_labels);
+%Evaluate Accuracy on test data
+[predicted_classes, ~, ~] = lda_predict(model_lda, X_test);
+total_accuracy = sum(predicted_classes==test_labels)...
+    /length(test_labels);
+
+fprintf("Performance Accuracy on test set was %.2f\n", total_accuracy);
     
     
