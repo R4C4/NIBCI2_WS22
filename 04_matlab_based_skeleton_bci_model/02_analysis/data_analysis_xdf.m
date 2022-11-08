@@ -113,7 +113,7 @@ for k_csp = 1:size(csp_filters)
 end
 [~, best_model_csp_idx] = max(model_accuracies);
 fprintf("Found Best Performing csp filtering with \n");
-fprintf("% filters \n",2*csp_filters(best_model_csp_idx));
+fprintf("%d filters \n",2*csp_filters(best_model_csp_idx));
 fprintf("With accuracy %.2f \n", model_accuracies(best_model_csp_idx));
 
 % %get accuracy of test set with best features
