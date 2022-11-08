@@ -7,7 +7,7 @@ global feedbackrun
 %% i) paradigm timings (all timings are expressed in seconds)
 BCIpar.times.time_pre_run   = 3;
 BCIpar.times.time_pre_cue   = 2.5;
-BCIpar.times.time_cue       = 1.5;
+BCIpar.times.time_cue       = 2.5;
 BCIpar.times.time_mi        = 5;
 BCIpar.times.time_break_min = 2;
 BCIpar.times.time_break_max = 3;

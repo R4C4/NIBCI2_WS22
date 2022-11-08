@@ -1,16 +1,18 @@
 function bpower_csp_eeg = feature_extraction(calibration_set,...
     calibration_labels, band, filter_order, fs)
     
-    csp_filters = filter_csp(calibration_set, calibration_labels);
+    csp_filters = filter_csp(calibration_set, calibration_labels, 1);
+        
     eeg_lapl_epoched_dims=size(calibration_set);
-    bpower_csp_eeg=zeros(size(band,1),eeg_lapl_epoched_dims(1),...
+    bpower_csp_eeg=zeros(size(band,1),size(csp_filters,2),...
         eeg_lapl_epoched_dims(3));
 
     for k_band=1:size(band,1)
 
         b= butter(filter_order, band(k_band,:)/(2*fs),'bandpass');
         eeg_lapl_filt_bp = zeros(size(calibration_set));
-        eeg_lapl_csp=zeros(size(calibration_set));
+        eeg_lapl_csp=zeros(size(csp_filters,2), size(calibration_set,2), ...
+            size(calibration_set,3));
 
         for k_epochs=1:size(calibration_set,3)    
             eeg_lapl_filt_bp(:,:,k_epochs) = ...

@@ -1,4 +1,4 @@
-function C = filter_csp(signal_windowed,labels)
+function C = filter_csp(signal_windowed,labels, csp_idx)
 %CALC_CSP  Calculate CSP filters from signal and labels
 %   Calculates the csp filters corresponding a eeg channel signal
 %   matrix (channels x time x epochs) and its corresponding labels
@@ -24,6 +24,8 @@ avg_cov_class_2 = mean(cov_epochs(:,:,labels==2),TRIAL_DIM);
 [V,d] = eig(avg_cov_class_1,avg_cov_class_1+avg_cov_class_2,...
     'qz', 'vector');
 [~, s_ind] = sort(d, 'descend');
-C = V(:,s_ind);
+V = V(:,s_ind);
+C = V(:,[1:csp_idx, end-csp_idx+1:end]);
+
 end
 
