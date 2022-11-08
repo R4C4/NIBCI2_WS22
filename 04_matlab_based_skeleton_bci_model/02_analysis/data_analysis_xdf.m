@@ -29,7 +29,7 @@ h_bp = create_online_fbfilt('butter',filter_order,[0.3 35],fs);
 usbAmp.time_series = filtfilt(h_bp.sosMatrix,h_bp.ScaleValues , ...
     double(usbAmp.time_series)')';
 
-d = fdesign.notch(filter_order, 50/(2*fs), 10);
+d = fdesign.notch('N,F0,Q,Ap',filter_order,2*50/fs,10,1);
 h_notch = design(d,'SystemObject',true);
 usbAmp.time_series=filtfilt(h_notch.SOSMatrix, h_notch.ScaleValues, ...
     usbAmp.time_series')';
@@ -62,8 +62,8 @@ end
 %% ERDS-MAPS
 % Laplace Derivations to 3 x epoch_time x epoch
 eeg_lapl_calibration = filter_laplacian(calib_data, c_labels);
-plot_erds_per_cond(eeg_lapl_calibration, fs, t_lim, calib_labels, 1);
-plot_erds_per_cond(eeg_lapl_calibration, fs, t_lim, calib_labels, 2);
+%plot_erds_per_cond(eeg_lapl_calibration, fs, t_lim, calib_labels, 1);
+%plot_erds_per_cond(eeg_lapl_calibration, fs, t_lim, calib_labels, 2);
 
 %% PSD
 % plot_psd(eeg_lapl_calibration, classes, calib_labels, fs);
@@ -77,45 +77,45 @@ bands_beta =  [[18 22];[24, 28];[26, 30]];%Hz
 [m, n] = ndgrid(1:size(bands_alpha), 1:size(bands_beta));
 bands =[bands_alpha(m(:),:),  bands_beta(n(:),:)];
 
-% % Of dim permutations x 2 x 2 (ie bands(1,:,:) is the first combination
-% % also [bands_alpha(1,:); bands_beta(1,:)]
-% bands = reshape(bands, size(bands,1), size(bands,2)/2, 2);
-% 
-% %% Feature Extraction (Bandpass then CSP, then Bandpower Calculation
-% % Of features x 2 x trials
-% bandpower_features = feature_extraction(calibration_set,...
-%     calibration_labels, bands, filter_order, fs);
-% 
-% FEATURE_DIM = 1;
-% CHANNEL_DIM = 2;
-% TRIAL_DIM = 3;
-% 
+% Of dim permutations x 2 x 2 (ie bands(1,:,:) is the first combination
+% also [bands_alpha(1,:); bands_beta(1,:)]
+bands = reshape(bands, size(bands,1), size(bands,2)/2, 2);
+
+%% Select cut off frequencies bands
+% set CSP filter number to just one
+
 % %% Model Selection 
-% %Compare Between 2 Features vs 4 Features
-% model_accuracies = size(2, size(bandpower_features, CHANNEL_DIM));
-% best_bands=[[6, 10];[24, 28]]; % Band that proved most significand in ERDS
-% models = {[2,3], [1,4], [2,4], [1,3]}; %Index of bands to be used for feature extraction
-% selected_features = {bandpower_features(models{1}, :, :), ...
-%                      bandpower_features(models{2}, :, :), ...
-%                      bandpower_features(models{3}, :, :), ...
-%                      bandpower_features(models{4}, :, :)};
-% for channel=1:size(bandpower_features,CHANNEL_DIM)
-%     model_accuracies(1, channel) = LDA(selected_features{1}, ...
-%         calibration_labels, channel);    
-%     model_accuracies(2, channel) = LDA(selected_features{2}, ...
-%         calibration_labels, channel);
-% end
-% %Max value of average over channels
-% [~, best_model_idx] = max(mean(model_accuracies,2));
-% selected_bands_idx = models{best_model_idx};
-% 
-% 
-% % Manually select bands (manual tuning) here
-% selected_bands = bands(selected_bands_idx,:);
-% best_features = selected_features{selected_bands_idx};
-% bandpower_features_test = feature_extraction(test_set,...
-%     test_labels, selected_bands, filter_order, fs);
-% 
+% Select bands with Cross Validation
+model_accuracies = zeros(1, size(bands, 1));
+for bidx = 1:size(bands,1)
+    band_combination = squeeze(bands(bidx,:, :))';
+    bpower_features = feature_extraction(calib_data, calib_labels, ...
+        band_combination, filter_order, 1, fs);
+    model_accuracies(bidx) = perform_cross_validation(bpower_features, ...
+                                    calib_labels, 5, 10);
+end
+ [~, best_model_bands_idx] = max(model_accuracies);
+ best_bands = squeeze(bands(bidx,:,:))';
+fprintf("Found Best Performing model at Bands \n");
+fprintf("%d-%d and %d-%d Hz \n",best_bands');
+fprintf("With accuracy %.2f \n\n", model_accuracies(best_model_bands_idx));
+
+% Select number of CSP filters using cross validation
+
+%1 CSP filter means first and last, 2 filters means 2 first and 2 last
+csp_filters = [1, 2];
+model_accuracies = zeros(1, size(csp_filters, 2));
+for k_csp = 1:size(csp_filters)
+   bpower_features = feature_extraction(calib_data, calib_labels, ...
+        best_bands, filter_order, csp_filters(k_csp), fs);
+   model_accuracies(k_csp) = perform_cross_validation(bpower_features, ...
+                                calib_labels, 5, 10);
+end
+[~, best_model_csp_idx] = max(model_accuracies);
+fprintf("Found Best Performing csp filtering with \n");
+fprintf("% filters \n",2*csp_filters(best_model_csp_idx));
+fprintf("With accuracy %.2f \n", model_accuracies(best_model_csp_idx));
+
 % %get accuracy of test set with best features
 % total_accuracy = size(1,size(bandpower_features_test,CHANNEL_DIM)); 
 % for channel=1:size(bandpower_features_test,CHANNEL_DIM)

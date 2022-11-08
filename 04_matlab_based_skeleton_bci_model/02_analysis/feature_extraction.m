@@ -1,27 +1,35 @@
 function bpower_csp_eeg = feature_extraction(calibration_set,...
-    calibration_labels, band, filter_order, fs)
+    calibration_labels, band, filter_order, csp_features, fs)  
     
-    csp_filters = filter_csp(calibration_set, calibration_labels, 1);
-        
-    eeg_lapl_epoched_dims=size(calibration_set);
-    bpower_csp_eeg=zeros(size(band,1),size(csp_filters,2),...
-        eeg_lapl_epoched_dims(3));
-
+    % Concatenatec CSP channels basically
+    csp_signal = [];
     for k_band=1:size(band,1)
-
-        b= butter(filter_order, band(k_band,:)/(2*fs),'bandpass');
-        eeg_lapl_filt_bp = zeros(size(calibration_set));
-        eeg_lapl_csp=zeros(size(csp_filters,2), size(calibration_set,2), ...
-            size(calibration_set,3));
-
-        for k_epochs=1:size(calibration_set,3)    
-            eeg_lapl_filt_bp(:,:,k_epochs) = ...
-                filtfilt(b, 1,calibration_set(:,:,k_epochs)')';
-            eeg_lapl_csp(:,:,k_epochs) = ...
-                csp_filters'*eeg_lapl_filt_bp(:,:,k_epochs);
-
-        end
+        % Filter with band
+        h_bp = create_online_fbfilt('butter',filter_order, ...
+                                     band(k_band,:),fs);       
+        cal_signal_conc = concatenate_epochs(calibration_set);        
+        cal_signal_conc = filtfilt(h_bp.sosMatrix, ...
+               h_bp.ScaleValues, cal_signal_conc')';
+           
+        %Bring back into epoched state   
+        bp_eeg_data = reshape(cal_signal_conc, size(calibration_set));
+        
+        csp_filters = filter_csp(bp_eeg_data, calibration_labels, ...
+                                 csp_features);
+        csp_signal_band = csp_filters'*cal_signal_conc;
+        csp_signal = cat(1, csp_signal, csp_signal_band);
         % Features x Channels x Trials
-        bpower_csp_eeg(k_band,:,:) = get_bandpower(eeg_lapl_csp);
     end
+    % Reshape to be epoched data
+    original_dims = size(calibration_set);
+    csp_signal=reshape(csp_signal, ...
+        [size(csp_signal,1),original_dims(2:end)]);
+    %Features x Trials
+    bpower_csp_eeg = get_bandpower(csp_signal);    
+end
+
+function concatenated_sig = concatenate_epochs(epoched_signal)
+    concatenated_sig =  reshape(epoched_signal, ...
+            size(epoched_signal,1), ...
+            size(epoched_signal,2)*size(epoched_signal,3));
 end
