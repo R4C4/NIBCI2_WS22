@@ -39,8 +39,8 @@ BCIpar = set_bciparadigm_parameters_twoclass_mi;
 classes = convertCharsToStrings(BCIpar.cues.class_labels);
 
 %Plot EEG for visual inspection
-%eeg_and_markers_scrollplot(usbAmp.segments.duration/BCIpar.nTrials, ...
-%    usbAmp, markers)
+eeg_and_markers_scrollplot(usbAmp.segments.duration/BCIpar.nTrials, ...
+    usbAmp, markers)
 
 %% Epoch data, Perform outlier rejection
 % Epoched data is channel x time x trial
