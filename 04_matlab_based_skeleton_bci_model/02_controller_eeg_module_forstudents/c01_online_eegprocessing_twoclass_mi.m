@@ -89,7 +89,12 @@ fprintf('\n Opening the lda-class-and-probabilities outlet...');
 outlet_classifier = lsl_outlet(info_classifier);
 
 %% load participant-specific fb-frequencies, CSP models, and sLDA classifier
-load(fullfile(subject_root_dir, 'csp_and_slda_calibration_models.mat'))
+a=load(fullfile(subject_root_dir, 'csp_and_slda_calibration_models.mat'));
+store=a.store;
+%store.xxx the get data
+%TODO: csp_model_cal,csp_filter_selection,movavg_dur
+%I have no idea what these should be. When you get to the part in the code
+%where you need it tell me what is missing please...
 
 % the file contains:
 % - csp_model_cal        > nchans x nchans x 2 (double)
