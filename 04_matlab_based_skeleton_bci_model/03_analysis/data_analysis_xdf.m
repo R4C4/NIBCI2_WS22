@@ -130,5 +130,20 @@ total_accuracy = sum(predicted_classes==test_labels)...
     /length(test_labels);
 
 fprintf("Performance Accuracy on test set was %.2f\n", total_accuracy);
+
+store.csp_model_cal=123;
+store.csp_filter_selection=1;
+store.model_lda_cal.w=model_lda.w; %TODO: find out why it's only 2x5 and not 2x9
+store.model_lda_cal.classlabels=model_lda.classlabels;
+store.selected_fb_filters=best_bands;
+store.fb_filter_order=filter_order;
+store.fb_filter_type='butter';
+store.fs_eeg=fs;
+store.movavg_dur=1; %TODO:no idea what this should be
+
+cd(homedir)
+cd('../../')
+save('999_recorded_data/csp_and_slda_calibration_models.mat','store')
+
     
     
