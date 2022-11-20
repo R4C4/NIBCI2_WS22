@@ -5,9 +5,10 @@ homedir = fileparts(mfilename('fullpath'));
 cd(homedir)
 addpath(genpath('../../'))
 
-trial_data_location="999_recorded_data/";
-filename = "trial_data_120_real.xdf";
-data = load_xdf(trial_data_location + filename, 'Verbose', true);
+subject = 'chris';
+trial_path = fullfile(homedir, '..', '..', '999_recorded_data', subject);
+trial_data_location  = fullfile(trial_path, 'trial_data_120_real.xdf') ;
+data = load_xdf(trial_data_location, 'Verbose', true);
 
 %Check if this information fits with real streams
 %fields: info, segments, time_series, time_stamps
@@ -62,8 +63,8 @@ end
 %% ERDS-MAPS
 % Laplace Derivations to 3 x epoch_time x epoch
 eeg_lapl_calibration = filter_laplacian(calib_data, c_labels);
-plot_erds_per_cond(eeg_lapl_calibration, fs, t_lim, calib_labels, 1);
-plot_erds_per_cond(eeg_lapl_calibration, fs, t_lim, calib_labels, 2);
+%plot_erds_per_cond(eeg_lapl_calibration, fs, t_lim, calib_labels, 1);
+%plot_erds_per_cond(eeg_lapl_calibration, fs, t_lim, calib_labels, 2);
 
 %% PSD
 % plot_psd(eeg_lapl_calibration, classes, calib_labels, fs);
@@ -104,7 +105,7 @@ fprintf("With accuracy %.2f \n\n", model_accuracies(best_model_bands_idx));
 %1 CSP filter means first and last, 2 filters means 2 first and 2 last
 csp_filters = [1, 2];
 model_accuracies = zeros(1, size(csp_filters, 2));
-for k_csp = 1:size(csp_filters)
+for k_csp = 1:length(csp_filters)
    bpower_features = feature_extraction(calib_data, calib_labels, ...
         best_bands, filter_order, csp_filters(k_csp), fs);
    model_accuracies(k_csp) = perform_cross_validation(bpower_features, ...
@@ -133,17 +134,17 @@ fprintf("Performance Accuracy on test set was %.2f\n", total_accuracy);
 
 store.csp_model_cal=123;
 store.csp_filter_selection=1;
-store.model_lda_cal.w=model_lda.w; %TODO: find out why it's only 2x5 and not 2x9
+store.model_lda_cal.w=model_lda.w;
 store.model_lda_cal.classlabels=model_lda.classlabels;
 store.selected_fb_filters=best_bands;
 store.fb_filter_order=filter_order;
 store.fb_filter_type='butter';
 store.fs_eeg=fs;
-store.movavg_dur=1; %TODO:no idea what this should be
+store.movavg_dur=0.1; %TODO:no idea what this should be
 
 cd(homedir)
 cd('../../')
-save('999_recorded_data/csp_and_slda_calibration_models.mat','store')
+save(fullfile(trial_path, 'csp_and_slda_calibration_models.mat'),'store');
 
     
     
