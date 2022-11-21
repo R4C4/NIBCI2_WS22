@@ -113,11 +113,14 @@ store=a.store;
 
 %% create filters for each filter bank, moving average filter coefficients, and decimation filter
 % fb filters
-
+    h_bp_alpha = create_online_fbfilt('butter', ...
+        store.fb_filter_order, store.selected_fb_filters(1,:),fs);
+    h_bp_beta = create_online_fbfilt('butter', ...
+        store.fb_filter_order, store.selected_fb_filters(2,:),fs);
 % moving average filter
-
+    moving_avg_len = store.movavg_dur/store.fs_eeg;
 % csp_filter;
-
+    
 % decimation filter
 % you need to define a buffer to take 1 sample from 16 samples
 %% main loop
@@ -137,7 +140,9 @@ while decoding
     if ~isempty(eeg_chunk) % if the chunk is empty
         
         % filter the eeg chunk
-        
+            
+            bp_eeg_chunk = filtfilt(h_bp.sosMatrix,h_bp.ScaleValues , ...
+                             double(eeg_chunk)')'
         % csp filter
 
         % get instantaneous power

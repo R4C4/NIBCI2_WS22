@@ -58,7 +58,7 @@ end
 
 %%Split in Calibration and test data
 [calib_data, calib_labels, test_data, test_labels] = ...
-    split_data(eegdata_epoched, valid_labels, 2/3);
+    split_data(eegdata_epoched, valid_labels, 2/3, false);
 
 %% ERDS-MAPS
 % Laplace Derivations to 3 x epoch_time x epoch
@@ -87,10 +87,12 @@ bands = reshape(bands, size(bands,1), size(bands,2)/2, 2);
 % %% Model Selection 
 % Select bands with Cross Validation
 model_accuracies = zeros(1, size(bands, 1));
+default_csp_sel = logical([1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]);
 for bidx = 1:size(bands,1)
     band_combination = squeeze(bands(bidx,:, :))';
-    bpower_features = feature_extraction(calib_data, calib_labels, ...
-        band_combination, filter_order, 1, fs);
+    ext = FeatureExtractor(band_combination, filter_order, fs);
+    [~, bpower_features] = extract(ext, calib_data, calib_labels, ...
+        default_csp_sel);
     model_accuracies(bidx) = perform_cross_validation(bpower_features, ...
                                     calib_labels, 5, 10);
 end
@@ -102,26 +104,29 @@ fprintf("With accuracy %.2f \n\n", model_accuracies(best_model_bands_idx));
 
 % Select number of CSP filters using cross validation
 
-%1 CSP filter means first and last, 2 filters means 2 first and 2 last
-csp_filters = [1, 2];
-model_accuracies = zeros(1, size(csp_filters, 2));
-for k_csp = 1:length(csp_filters)
-   bpower_features = feature_extraction(calib_data, calib_labels, ...
-        best_bands, filter_order, csp_filters(k_csp), fs);
+%Csp filters, logical array
+csp_filters = [logical([1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]); ...
+               logical([1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1])];
+model_accuracies = zeros(1, size(csp_filters, 1));
+for k_csp = 1:size(csp_filters,1)
+  ext = FeatureExtractor(best_bands, filter_order, fs);
+  [~, bpower_features] = extract(ext, calib_data, calib_labels, ...
+      csp_filters(k_csp,:));
    model_accuracies(k_csp) = perform_cross_validation(bpower_features, ...
                                 calib_labels, 5, 10);
 end
 [~, best_model_csp_idx] = max(model_accuracies);
-best_num_csp = csp_filters(best_model_csp_idx);
-fprintf("Found Best Performing csp filtering with \n");
-fprintf("%d filters \n",2*best_num_csp);
+best_csp_sel = csp_filters(best_model_csp_idx, :);
+fprintf("Found Best Performing csp filter with selection %d\n", ...
+    best_model_csp_idx);
 fprintf("With accuracy %.2f \n\n", model_accuracies(best_model_csp_idx));
 
 %Evaluate Model performance with Test data
-X_train = feature_extraction(calib_data, calib_labels, ...
-        best_bands, filter_order, best_num_csp, fs)';
-X_test = feature_extraction(test_data, test_labels, ...
-        best_bands, filter_order, best_num_csp, fs)';
+ext = FeatureExtractor(best_bands, filter_order, fs);
+[csp_model, X_train] = extract(ext, calib_data, calib_labels, ...
+    best_csp_sel);
+X_train = X_train';
+X_test = extract_test(ext, test_data, csp_model, best_csp_sel)';
     
 %Train Model on all Calibration data
 model_lda = lda_train(X_train,calib_labels);
@@ -132,15 +137,15 @@ total_accuracy = sum(predicted_classes==test_labels)...
 
 fprintf("Performance Accuracy on test set was %.2f\n", total_accuracy);
 
-store.csp_model_cal=123;
-store.csp_filter_selection=1;
+store.csp_model_cal=csp_model;
+store.csp_filter_selection=best_csp_sel;
 store.model_lda_cal.w=model_lda.w;
 store.model_lda_cal.classlabels=model_lda.classlabels;
 store.selected_fb_filters=best_bands;
 store.fb_filter_order=filter_order;
 store.fb_filter_type='butter';
 store.fs_eeg=fs;
-store.movavg_dur=0.1; %TODO:no idea what this should be
+store.movavg_dur=0.016;%s
 
 cd(homedir)
 cd('../../')
