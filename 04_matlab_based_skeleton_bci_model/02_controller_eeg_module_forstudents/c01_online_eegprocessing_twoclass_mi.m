@@ -121,13 +121,15 @@ store=a.store;
 % decimation filter
 % you need to define a buffer to take 1 sample from 16 samples
 logbp_feat_all_down = [];
+buffer_size = moving_avg_len*4;
+csp_data_alpha = CircularBuffer(size(csp_filter_alpha,1), buffer_size);
+csp_data_beta = CircularBuffer(size(csp_filter_beta,1), buffer_size);
 %% main loop
 
 % initialize the variables for the initial states of the loop (they will
 % then be updated when running the code)
-buffer_size = moving_avg_len*4;
-csp_data_alpha = CircularBuffer(size(csp_filter_alpha,1), buffer_size);
-csp_data_beta = CircularBuffer(size(csp_filter_beta,1), buffer_size);
+
+
 
 fprintf('\n\n eeg decoding started...')
 
@@ -158,8 +160,14 @@ while decoding
 
         % get instantaneous power       
         % moving average filter
-        alpha_last_sec = getLastNSamples(csp_data_alpha, moving_avg_len);
-        beta_last_sec = getLastNSamples(csp_data_beta, moving_avg_len);
+        alpha_last_sec = getLastNSamples(csp_data_alpha, 2*moving_avg_len);
+        beta_last_sec = getLastNSamples(csp_data_beta, 2*moving_avg_len);
+        
+        avg_alpha = movmean(alpha_last_sec, [moving_avg_len 0],2);
+        avg_beta = movmean(beta_last_sec, [moving_avg_len 0],2);
+         
+        avg_alpha = avg_alpha(moving_avg_len+1:end);
+        avg_beta = avg_beta(moving_avg_len+1:end);
         
         
         % obtatining the log of the features
