@@ -1,0 +1,6 @@
+function concatenated_sig = concatenate_epochs(epoched_signal)
+    concatenated_sig =  reshape(epoched_signal, ...
+            size(epoched_signal,1), ...
+            size(epoched_signal,2)*size(epoched_signal,3));
+end     
+
