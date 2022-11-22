@@ -145,7 +145,7 @@ store.selected_fb_filters=best_bands;
 store.fb_filter_order=filter_order;
 store.fb_filter_type='butter';
 store.fs_eeg=fs;
-store.movavg_dur=0.016;%s
+store.movavg_dur=1;%0.016;%s
 
 cd(homedir)
 cd('../../')

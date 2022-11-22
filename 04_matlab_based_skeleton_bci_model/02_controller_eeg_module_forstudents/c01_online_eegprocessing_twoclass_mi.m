@@ -34,13 +34,14 @@
 clearvars, close all, clc
 
 % subject = input('What is the subject code?','s');
-subject = 'sample_participant';
+subject = 'chris';
 subject_root_dir = ['../../999_recorded_data/' subject '/'];
 
 %% add path to libraries, set homedir etc
 
 % set homedir
 homedir = fileparts(mfilename('fullpath'));
+cd(homedir)
 addpath(genpath('../../'))
 
 % instantiate the library
@@ -91,11 +92,6 @@ outlet_classifier = lsl_outlet(info_classifier);
 %% load participant-specific fb-frequencies, CSP models, and sLDA classifier
 a=load(fullfile(subject_root_dir, 'csp_and_slda_calibration_models.mat'));
 store=a.store;
-%store.xxx the get data
-%TODO: csp_model_cal,csp_filter_selection,movavg_dur
-%I have no idea what these should be. When you get to the part in the code
-%where you need it tell me what is missing please...
-
 % the file contains:
 % - csp_model_cal        > nchans x nchans x 2 (double)
 % - csp_filter_selection > 1xnchans (logical), 
@@ -113,43 +109,58 @@ store=a.store;
 
 %% create filters for each filter bank, moving average filter coefficients, and decimation filter
 % fb filters
-    h_bp_alpha = create_online_fbfilt('butter', ...
-        store.fb_filter_order, store.selected_fb_filters(1,:),fs);
-    h_bp_beta = create_online_fbfilt('butter', ...
-        store.fb_filter_order, store.selected_fb_filters(2,:),fs);
+    h_bp_alpha = create_online_fbfilt(store.fb_filter_type, ...
+        store.fb_filter_order, store.selected_fb_filters(1,:),store.fs_eeg);
+    h_bp_beta = create_online_fbfilt(store.fb_filter_type, ...
+        store.fb_filter_order, store.selected_fb_filters(2,:),store.fs_eeg);
 % moving average filter
-    moving_avg_len = store.movavg_dur/store.fs_eeg;
+    moving_avg_len = floor(store.movavg_dur*store.fs_eeg);
 % csp_filter;
-    
+    csp_filter_alpha = store.csp_model_cal(:,store.csp_filter_selection,1);
+    csp_filter_beta = store.csp_model_cal(:,store.csp_filter_selection,1);
 % decimation filter
 % you need to define a buffer to take 1 sample from 16 samples
+logbp_feat_all_down = [];
 %% main loop
 
 % initialize the variables for the initial states of the loop (they will
 % then be updated when running the code)
+buffer_size = moving_avg_len*4;
+csp_data_alpha = CircularBuffer(size(csp_filter_alpha,1), buffer_size);
+csp_data_beta = CircularBuffer(size(csp_filter_beta,1), buffer_size);
 
 fprintf('\n\n eeg decoding started...')
 
 decoding = true;
 t_start_timeout = tic; t_timeout = 5;
 while decoding
-    
     % continuously pull eeg chunks
-    [eeg_chunk,~] = inlet_eeg.pull_chunk(); % note: dimension is [channels x samples]
+    [eeg_chunk,~] = inlet_eeg.pull_chunk(); 
+    % note: dimension is [channels x samples]
     
     if ~isempty(eeg_chunk) % if the chunk is empty
-        
-        % filter the eeg chunk
-            
-            bp_eeg_chunk = filtfilt(h_bp.sosMatrix,h_bp.ScaleValues , ...
-                             double(eeg_chunk)')'
+        % filter the eeg chunk   
+            fprintf("Chunk Size %d\n", size(eeg_chunk,2));
+            eeg_alpha = filtfilt(h_bp_alpha.sosMatrix, ...
+                                 h_bp_alpha.ScaleValues , ...
+                                 double(eeg_chunk)')';
+            eeg_beta = filtfilt(h_bp_beta.sosMatrix, ...
+                                 h_bp_beta.ScaleValues , ...
+                                 double(eeg_chunk)')';                 
         % csp filter
+            eeg_csp_alpha = csp_filter_alpha'*eeg_alpha;
+            eeg_csp_beta = csp_filter_beta'*eeg_beta;
+            
+            csp_data_alpha = push(csp_data_alpha, eeg_chunk);
+            csp_data_beta = push(csp_data_beta, eeg_chunk);
+            
+            fprintf("Current Index %d\n", csp_data_alpha.current_idx);
 
-        % get instantaneous power
-  
+        % get instantaneous power       
+        % moving average filter
+        alpha_last_sec = getLastNSamples(csp_data_alpha, moving_avg_len);
+        beta_last_sec = getLastNSamples(csp_data_beta, moving_avg_len);
         
-        % moving avergae filter
-
         
         % obtatining the log of the features
   
@@ -159,7 +170,7 @@ while decoding
         % downsample to "fs_down" (so not to have the classifier output too
         % frequently)
          
-        
+        pause(3e-1);
         % logbp_feat_all_down is the output of downsmapling
         if ~isempty(logbp_feat_all_down)
             
