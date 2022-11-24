@@ -122,8 +122,8 @@ store=a.store;
 % you need to define a buffer to take 1 sample from 16 samples
 logbp_feat_all_down = [];
 buffer_size = moving_avg_len*4;
-csp_data_alpha = CircularBuffer(size(csp_filter_alpha,1), buffer_size);
-csp_data_beta = CircularBuffer(size(csp_filter_beta,1), buffer_size);
+csp_data_alpha = CircularBuffer(size(csp_filter_alpha,2), buffer_size);
+csp_data_beta = CircularBuffer(size(csp_filter_beta,2), buffer_size);
 %% main loop
 
 % initialize the variables for the initial states of the loop (they will
@@ -153,8 +153,8 @@ while decoding
             eeg_csp_alpha = csp_filter_alpha'*eeg_alpha;
             eeg_csp_beta = csp_filter_beta'*eeg_beta;
             
-            csp_data_alpha = push(csp_data_alpha, eeg_chunk);
-            csp_data_beta = push(csp_data_beta, eeg_chunk);
+            csp_data_alpha = push(csp_data_alpha, eeg_csp_alpha);
+            csp_data_beta = push(csp_data_beta, eeg_csp_beta);
             
             fprintf("Current Index %d\n", csp_data_alpha.current_idx);
 
@@ -166,14 +166,16 @@ while decoding
         avg_alpha = movmean(alpha_last_sec, [moving_avg_len 0],2);
         avg_beta = movmean(beta_last_sec, [moving_avg_len 0],2);
          
-        avg_alpha = avg_alpha(moving_avg_len+1:end);
-        avg_beta = avg_beta(moving_avg_len+1:end);
+        avg_alpha = avg_alpha(:,moving_avg_len+1:end);
+        avg_beta = avg_beta(:,moving_avg_len+1:end);
         
         
-        % obtatining the log of the features
-  
+        % obtaining the log of the features
+        log_ave_alpha = log10(var(avg_alpha,0,2));
+        log_ave_beta = log10(var(avg_beta,0,2));
         
         % concatenate log_bp features for fb1 and fb2
+        log_bp=[log_ave_alpha; log_ave_beta];
         
         % downsample to "fs_down" (so not to have the classifier output too
         % frequently)
