@@ -119,6 +119,7 @@ store=a.store;
     csp_filter_alpha = store.csp_model_cal(:,store.csp_filter_selection,1);
     csp_filter_beta = store.csp_model_cal(:,store.csp_filter_selection,1);
 % decimation filter
+    fs_down = 16;
 % you need to define a buffer to take 1 sample from 16 samples
 logbp_feat_all_down = [];
 buffer_size = moving_avg_len*4;
@@ -130,19 +131,21 @@ csp_data_beta = CircularBuffer(size(csp_filter_beta,2), buffer_size);
 % then be updated when running the code)
 
 
-
 fprintf('\n\n eeg decoding started...')
 
 decoding = true;
 t_start_timeout = tic; t_timeout = 5;
 while decoding
+    iter_start = tic;
     % continuously pull eeg chunks
-    [eeg_chunk,~] = inlet_eeg.pull_chunk(); 
+    [eeg_chunk,~] = inlet_eeg.pull_chunk();
+
     % note: dimension is [channels x samples]
-    
+
     if ~isempty(eeg_chunk) % if the chunk is empty
         % filter the eeg chunk   
-            fprintf("Chunk Size %d\n", size(eeg_chunk,2));
+
+            fprintf("\nRead chunk of size %d, %d\n", size(eeg_chunk));
             eeg_alpha = filtfilt(h_bp_alpha.sosMatrix, ...
                                  h_bp_alpha.ScaleValues , ...
                                  double(eeg_chunk)')';
@@ -152,61 +155,72 @@ while decoding
         % csp filter
             eeg_csp_alpha = csp_filter_alpha'*eeg_alpha;
             eeg_csp_beta = csp_filter_beta'*eeg_beta;
-            
+
             csp_data_alpha = push(csp_data_alpha, eeg_csp_alpha);
             csp_data_beta = push(csp_data_beta, eeg_csp_beta);
-            
-            fprintf("Current Index %d\n", csp_data_alpha.current_idx);
 
         % get instantaneous power       
         % moving average filter
         alpha_last_sec = getLastNSamples(csp_data_alpha, 2*moving_avg_len);
         beta_last_sec = getLastNSamples(csp_data_beta, 2*moving_avg_len);
-        
+
         avg_alpha = movmean(alpha_last_sec, [moving_avg_len 0],2);
         avg_beta = movmean(beta_last_sec, [moving_avg_len 0],2);
-         
-        avg_alpha = avg_alpha(:,moving_avg_len+1:end);
-        avg_beta = avg_beta(:,moving_avg_len+1:end);
         
-        
+        read_samples = size(eeg_chunk,2);
+        if read_samples > 2*moving_avg_len
+            read_samples = moving_avg_len;
+        end
+        avg_alpha = avg_alpha(:,end-read_samples+1:end);
+        avg_beta = avg_beta(:,end-read_samples+1:end);
+
+
         % obtaining the log of the features
-        log_ave_alpha = log10(var(avg_alpha,0,2));
-        log_ave_beta = log10(var(avg_beta,0,2));
-        
+        log_ave_alpha = log10(avg_alpha.^2);
+        log_ave_beta = log10(avg_beta.^2);
+
         % concatenate log_bp features for fb1 and fb2
         log_bp=[log_ave_alpha; log_ave_beta];
-        
+
         % downsample to "fs_down" (so not to have the classifier output too
-        % frequently)
-         
-        pause(3e-1);
+        % frequency)
+        logbp_feat_all_down = downsample(log_bp', fs_down);
         % logbp_feat_all_down is the output of downsmapling
         if ~isempty(logbp_feat_all_down)
-            
             % lda classifier
-            
-            % create the chunk to be streamed (first row: predicted class, second row: probability of predicted class)
-            lin_idxs = sub2ind(size(class_probs),1:length(predicted_class),predicted_class'); % variable to correctly index the matrix of class probabilities
-            lda_out_chunk = [predicted_class'; class_probs(lin_idxs)];
-            
+            [predicted_classes, ~, class_probs] = ...
+                lda_predict(store.model_lda_cal, logbp_feat_all_down);
+
+            % create the chunk to be streamed 
+            % (first row: predicted class, 
+            % second row: probability of predicted class)
+            lin_idxs = sub2ind(size(class_probs), ...
+                1:length(predicted_classes),predicted_classes'); 
+            % variable to correctly index the matrix of class probabilities
+            lda_out_chunk = [predicted_classes'; class_probs(lin_idxs)];
+            fprintf("Pushed chunk of size %d,%d\n", size(lda_out_chunk));
             % and push it through lsl
             outlet_classifier.push_chunk(lda_out_chunk)
-            
+
         end
         
+        %At least 12 samples need to be available in the chunk
+        while toc(iter_start) < 0.1
+            pause(0.01);
+            %Wait until time has passed
+        end
         % reset the t_start
         t_start_timeout = tic;
-        
+
     end
-    
+
     % piece of code to stop execution of the controller if samples are not
     % received for more than "t_timeout" seconds
     if toc(t_start_timeout)>t_timeout
         fprintf('\n eeg samples not received for %d seconds... decoding is stopped.\n',t_timeout)
         decoding = false;
     end
-    
+
 end
 
 %% lsl inlets/outlets clean up

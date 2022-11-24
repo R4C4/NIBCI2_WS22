@@ -11,15 +11,14 @@ classdef CircularBuffer
         end
         
         function output = getLastNSamples(obj, n)
-            if n > obj.bufferSize
+            if n >= obj.bufferSize
                 output = obj.data;
                 return
             end
-            if obj.current_idx -n < 1
+            if obj.current_idx - n < 1
                 overhang = n - obj.current_idx;
-                last_n = obj.bufferSize - overhang;
-                output = zeros(size(obj.data,1), n);
-                output(:,1:overhang) = obj.data(:,last_n+1:end);
+                output = zeros(size(obj.data,1), n); 
+                output(:,1:overhang) = obj.data(:,end-overhang+1:end);
                 output(:,overhang+1:end) =  ...
                     obj.data(:,1:obj.current_idx);
             else
@@ -29,7 +28,8 @@ classdef CircularBuffer
         function obj = push(obj, data)
             chunk_size = size(data,2);
             if chunk_size > obj.bufferSize
-                obj.data = data(:,end-obj.bufferSize+1:obj.bufferSize);
+                obj.data = data(:,end-obj.bufferSize+1:end);
+                obj.current_idx = 1;
                 return
             end
             if obj.current_idx + chunk_size > obj.bufferSize
