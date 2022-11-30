@@ -52,18 +52,18 @@ outlet_marker = lsl_outlet(lslinfo_marker);
 
 % in case it is a feedback run, wait for the controller streams to be ready
 if feedbackrun
-    % resolve the lda classification
-%     fprintf('\n Resolving lda classification...');
-%     stream_predict_class = {};
-%     eeg_predict_str_name = 'lda-class-and-probabilities';
-% 
-%     while isempty(stream_predict_class)
-%     disp(stream_predict_class)
-%     % resolve the lsl stream by name with "lsl_resolve_byprop"
-%     stream_predict_class = lsl_resolve_byprop(lib,'name',eeg_predict_str_name); 
-%     end
-%     fprintf('\n Opening an inlet for the lda classification and probability...');
-%     inlet_classification_result = lsl_inlet(stream_predict_class{1});
+    %resolve the lda classification
+    fprintf('\n Resolving lda classification...');
+    stream_predict_class = {};
+    eeg_predict_str_name = 'lda-class-and-probabilities';
+
+    while isempty(stream_predict_class)
+    disp(stream_predict_class)
+    % resolve the lsl stream by name with "lsl_resolve_byprop"
+    stream_predict_class = lsl_resolve_byprop(lib,'name',eeg_predict_str_name); 
+    end
+    fprintf('\n Opening an inlet for the lda classification and probability...');
+    inlet_classification_result = lsl_inlet(stream_predict_class{1});
 
 end
 %% paradigm ready to start:
@@ -167,10 +167,12 @@ for k_trial = 1:BCIpar.nTrials
                 % get samples for 5 seconds
                 for k = 1 : 100
                       pause(0.049);
-                    % get sample with probability and class here here
+                    classes_and_prob = inlet_classification_result.pull_sample();
                     
-                    classified_class = 2;
-                    probability = 0.8;
+                    % get sample with probability and class here here
+                    classified_class = classes_and_prob(1);
+                    probability = classes_and_prob(2);
+                   
 
                     if BCIpar.cues.class_list(k_trial) == classified_class
                         %barplot with probability
