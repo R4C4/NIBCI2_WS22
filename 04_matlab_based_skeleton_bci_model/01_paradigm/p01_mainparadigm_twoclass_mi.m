@@ -156,23 +156,17 @@ for k_trial = 1:BCIpar.nTrials
          % with Feedbackrun
          if feedbackrun
                 
-                % set class_start images off
-                if BCIpar.cues.class_list(k_trial)==1
-                    set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'off');
-                else
-                    set(BCIpar.sfDisplay.himage_class2_start, 'Visible', 'off');
-
-                end
-                
                 % get samples for 5 seconds
                 for k = 1 : 100
                       pause(0.049);
+
                     classes_and_prob = inlet_classification_result.pull_sample();
-                    
                     % get sample with probability and class here here
                     classified_class = classes_and_prob(1);
                     probability = classes_and_prob(2);
-                   
+                    
+
+
 
                     if BCIpar.cues.class_list(k_trial) == classified_class
                         %barplot with probability
@@ -182,7 +176,7 @@ for k_trial = 1:BCIpar.nTrials
                         BCIpar.sfDisplay.barplot = barh(probability);
                         ax = get(gcf, 'CurrentAxes');
                         set(ax, 'Color', 'k')
-                        set(ax, 'Position', [0.3 0.149 0.4 0.4*aspect_ratio_heigth_over_width])
+                        set(ax, 'Position', [0.3 0.149 0.4 0.3*aspect_ratio_heigth_over_width])
                         set(ax, 'Xlim', [0 1])
                         
                 
@@ -194,13 +188,23 @@ for k_trial = 1:BCIpar.nTrials
                         BCIpar.sfDisplay.barplot = barh(1 - probability);
                         ax = get(gcf, 'CurrentAxes');
                         set(ax, 'Color', 'k')
-                        set(ax, 'Position', [0.3 0.149 0.4 0.4*aspect_ratio_heigth_over_width])
+                        set(ax, 'Position', [0.3 0.149 0.4 0.3*aspect_ratio_heigth_over_width])
                         set(ax, 'Xlim', [0 1])
                     end
                 end
                 % Visbility of bar 'off'
                 set(ax, 'Visible', 'off')
                 set(BCIpar.sfDisplay.barplot, 'Visible', 'off')
+                % set class_start images off
+                if BCIpar.cues.class_list(k_trial)==1
+                    set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'off');
+                else
+                    set(BCIpar.sfDisplay.himage_class2_start, 'Visible', 'off');
+
+                end
+                
+
+
           end
     if ~feedbackrun
              if BCIpar.cues.class_list(k_trial)==1
