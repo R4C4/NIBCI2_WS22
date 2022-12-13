@@ -34,7 +34,7 @@
 clearvars, close all, clc
 
 % subject = input('What is the subject code?','s');
-subject = 'chris';
+subject = 'simulation';
 subject_root_dir = ['../../999_recorded_data/' subject '/'];
 
 %% add path to libraries, set homedir etc

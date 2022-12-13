@@ -2,17 +2,16 @@
 %
 %   Description: The script "p01_mainparadigm_twoclass_mi.m" displays the
 %   BCI paradigm to the participant.
-%
+%k
 %   Paradigm: A simple cue-based, 2-class (hand vs. foot), mi paradigm is
 %   implemented.
 %
-%   Timings and appearence: The timings (pre-cue, cue, mi...) and
+%   Timings and appearence: The timings (pre-cue, cue, mi.s..) and
 %   appearence of visual elements (fixation cross, images, etc) are set
 %   through the "set_bciparadigm_parameters_twoclass_mi.m" function, and
 %   saved in the structure called "BCI".
 %   
-%   Calibration vs. feedback: The paradigm can run in two modalities,
-%   i.e. calibration or feedback runs. The modality is specified by acting
+%   Calibration vs. feedback: The paradigm can run in ts specified by acting
 %   on the flag "feedbackrun".
 %   
 %   NOTE on the feedback: The paradigm runs independently of the underlying
@@ -22,8 +21,8 @@
 %   probability. 
 %
 %% ------------------------------------------------------------------------
-
-clear, close all, clc
+clear, clc
+%clear, close all, clc
 
 homedir = fileparts(mfilename('fullpath'));
 addpath(genpath('../../'))
@@ -58,9 +57,9 @@ if feedbackrun
     eeg_predict_str_name = 'lda-class-and-probabilities';
 
     while isempty(stream_predict_class)
-    disp(stream_predict_class)
-    % resolve the lsl stream by name with "lsl_resolve_byprop"
-    stream_predict_class = lsl_resolve_byprop(lib,'name',eeg_predict_str_name); 
+        disp(stream_predict_class)
+        % resolve the lsl stream by name with "lsl_resolve_byprop"
+        stream_predict_class = lsl_resolve_byprop(lib,'name',eeg_predict_str_name); 
     end
     fprintf('\n Opening an inlet for the lda classification and probability...');
     inlet_classification_result = lsl_inlet(stream_predict_class{1});
@@ -74,7 +73,7 @@ fprintf('\n      Paradigm is ready to start! Please:                     ')
 fprintf('\n          i) UPDATE the streams in the LabRecorder            ')
 fprintf('\n         ii) LINK the eeg stream                              ')
 fprintf('\n        iii) LINK the paradigm stream                         ')
-fprintf('\n         iv) LINK classifier output stream (if feedbackrun)   ')
+fprintf('\n         iv) LINK classifier output stream (if )   ')
 fprintf('\n          v) SELECT the experiment block                      ')
 fprintf('\n         vi) SELECT the experiment number                     ')
 fprintf('\n        vii) START the LabRecorder                            ')
@@ -92,7 +91,6 @@ set(BCIpar.sfDisplay.hfig,'Visible','on')
 % send "start of run" marker
 outlet_marker.push_sample({'start_of_run'});
 fprintf('\n \n Start of run...')
-
 % wait for the duration specified in preloadscript
 pause(BCIpar.times.time_pre_run)
 % ii) for loop running trials
@@ -150,82 +148,60 @@ for k_trial = 1:BCIpar.nTrials
          pause(BCIpar.times.time_cue)
          set(BCIpar.sfDisplay.hCross_horizontal, 'Visible', 'off');
          set(BCIpar.sfDisplay.hCross_vertical, 'Visible', 'off');
-         push_marker('mi_start', t_start, outlet_marker);
-
-         % Motor Imagery Start
-         % with Feedbackrun
-         if feedbackrun
-                
-                % get samples for 5 seconds
-                for k = 1 : 100
-                      pause(0.049);
-
-                    classes_and_prob = inlet_classification_result.pull_sample();
-                    % get sample with probability and class here here
-                    classified_class = classes_and_prob(1);
-                    probability = classes_and_prob(2);
-                    
-
-
-
-                    if BCIpar.cues.class_list(k_trial) == classified_class
-                        %barplot with probability
-                        aspect_ratio_heigth_over_width = BCIpar.sfDisplay.screensize(3)/...
-                        BCIpar.sfDisplay.screensize(4);
-
-                        BCIpar.sfDisplay.barplot = barh(probability);
-                        ax = get(gcf, 'CurrentAxes');
-                        set(ax, 'Color', 'k')
-                        set(ax, 'Position', [0.3 0.149 0.4 0.3*aspect_ratio_heigth_over_width])
-                        set(ax, 'Xlim', [0 1])
-                        
-                
-                    else
-                        %barplot with 1-probability 
-                        aspect_ratio_heigth_over_width = BCIpar.sfDisplay.screensize(3)/...
-                        BCIpar.sfDisplay.screensize(4);
-
-                        BCIpar.sfDisplay.barplot = barh(1 - probability);
-                        ax = get(gcf, 'CurrentAxes');
-                        set(ax, 'Color', 'k')
-                        set(ax, 'Position', [0.3 0.149 0.4 0.3*aspect_ratio_heigth_over_width])
-                        set(ax, 'Xlim', [0 1])
-                    end
-                end
-                % Visbility of bar 'off'
-                set(ax, 'Visible', 'off')
-                set(BCIpar.sfDisplay.barplot, 'Visible', 'off')
-                % set class_start images off
-                if BCIpar.cues.class_list(k_trial)==1
-                    set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'off');
-                else
-                    set(BCIpar.sfDisplay.himage_class2_start, 'Visible', 'off');
-
-                end
-                
-
-
-          end
-    if ~feedbackrun
-             if BCIpar.cues.class_list(k_trial)==1
-                set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'off');
-                set(BCIpar.sfDisplay.himage_class1_execute, 'Visible', 'on');
-                %set(BCIpar.sfDisplay.haxes_class1_execute, 'Visible', 'on');
-            else
-                set(BCIpar.sfDisplay.himage_class2_start, 'Visible', 'off');
-                set(BCIpar.sfDisplay.himage_class2_execute, 'Visible', 'on');
-                %set(BCIpar.sfDisplay.haxes_class2_execute, 'Visible', 'on');
-             end
          
-        pause(BCIpar.times.time_mi)
+         mi_start = tic;
+         push_marker('mi_start', t_start, outlet_marker);
+         if BCIpar.cues.class_list(k_trial)==1
+            set(BCIpar.sfDisplay.himage_class1_start, 'Visible', 'off');
+            set(BCIpar.sfDisplay.himage_class1_execute, 'Visible', 'on');
+            %set(BCIpar.sfDisplay.haxes_class1_execute, 'Visible', 'on');
+         else
+            set(BCIpar.sfDisplay.himage_class2_start, 'Visible', 'off');
+            set(BCIpar.sfDisplay.himage_class2_execute, 'Visible', 'on');
+            %set(BCIpar.sfDisplay.haxes_class2_execute, 'Visible', 'on');
+         end
+        
+        % Motor Imagery Start
+        % with Feedbackrun
+        if feedbackrun
+            while toc(mi_start) < BCIpar.times.time_mi
+            
+                classes_and_prob = inlet_classification_result.pull_sample();
+                set(BCIpar.sfDisplay.himage_class1_execute, 'Visible', 'off');
+                set(BCIpar.sfDisplay.himage_class2_execute, 'Visible', 'off');
+                % get sample with probability and class here here
+                classified_class = classes_and_prob(1);       
+                probability = classes_and_prob(2);
+                probability(isnan(probability)) = 0;
+                display(probability)
+                barcolor = 'r';
 
+                updateMIImage(BCIpar, classified_class(end), ...
+                    BCIpar.cues.class_list(k_trial));
+                if BCIpar.cues.class_list(k_trial) == classified_class(end)
+                    barcolor = 'g';                   
+                end
+                set(BCIpar.sfDisplay.haxes_barplot, 'Visible', 'on');
+                rect_handle = rectangle(BCIpar.sfDisplay.haxes_barplot, ...
+                    'Position', [0 0 0.1 probability(end)], ...
+                    'FaceColor', barcolor);
+                pause(0.5)
+                delete(rect_handle)
+            end
+            set(BCIpar.sfDisplay.haxes_barplot, 'Visible', 'off');
+            deactivateClassImages(BCIpar)
+        end
+        
+        % using else leads to annoying warning
+        if ~feedbackrun
+            pause(BCIpar.times.time_mi);
+        end
 
         if BCIpar.cues.class_list(k_trial)==1
             set(BCIpar.sfDisplay.himage_class1_execute, 'Visible', 'off');
         else
             set(BCIpar.sfDisplay.himage_class2_execute, 'Visible', 'off');
         end
-    end
         push_marker('break_start', t_start, outlet_marker);
         %Todo Set to random time between min and and max
         pause(BCIpar.times.time_break_min)
@@ -241,6 +217,30 @@ outlet_marker.push_sample({'end of run'});
 fprintf('\n \n ... end of run! \n')
 %% lsl outlets cleanup
 clear outlet_marker
+
+function deactivateClassImages(BCIpar)
+    set(BCIpar.sfDisplay.himage_class1_correct, 'Visible', 'Off');
+    set(BCIpar.sfDisplay.himage_class2_correct, 'Visible', 'Off');
+    set(BCIpar.sfDisplay.himage_class1_wrong, 'Visible', 'Off');
+    set(BCIpar.sfDisplay.himage_class2_wrong, 'Visible', 'Off');
+end
+
+function updateMIImage(BCIpar, predicted, trueclass)
+    deactivateClassImages(BCIpar)
+    if(trueclass == 1)
+        if(trueclass == predicted)
+            set(BCIpar.sfDisplay.himage_class1_correct, 'Visible', 'On');
+        else
+           set(BCIpar.sfDisplay.himage_class1_wrong, 'Visible', 'On'); 
+        end
+    else
+        if(trueclass == predicted)
+            set(BCIpar.sfDisplay.himage_class2_correct, 'Visible', 'On');
+        else
+            set(BCIpar.sfDisplay.himage_class2_wrong, 'Visible', 'On');
+        end
+    end
+end
 
 function push_marker(text,t_start, lsl_outlet)
     marker_text = text;
